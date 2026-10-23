@@ -98,7 +98,7 @@ dialog { border: 1px solid var(--line); background: var(--bg); color: var(--fg);
 dialog::backdrop { background: rgba(0,0,0,.8); }
 .dlg { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); max-height: calc(100vh - 26px); }
 .dlg-left { padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0; overflow: auto; }
-.dlg-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 10px; padding-right: 120px; }
+.dlg-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; }
 .dlg-head h3 { margin: 0; font-family: var(--display); font-size: 24px; }
 .dlg-themes { font-family: var(--mono); font-size: 11px; color: var(--mute); }
 .dlg-desc { color: var(--mute); margin: 0; max-width: 60ch; }
@@ -117,7 +117,7 @@ dialog::backdrop { background: rgba(0,0,0,.8); }
 .code-bar { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--line); }
 .code-bar span { font-family: var(--mono); font-size: 12px; color: var(--mute); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 pre { margin: 0; padding: 14px; overflow: auto; font-family: var(--mono); font-size: 12px; line-height: 1.55; color: var(--fg); flex: 1; min-height: 0; white-space: pre; tab-size: 2; }
-.close { position: absolute; top: 14px; right: 14px; z-index: 3; background: var(--bg); }
+.close { margin-left: auto; background: var(--bg); }
 
 .help { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(70px + env(safe-area-inset-top, 0px)); width: min(340px, calc(100vw - 32px)); background: var(--panel); border: 1px solid var(--accent); border-radius: 8px; padding: 16px 18px; z-index: 20; font-size: 13.5px; box-shadow: 0 18px 50px rgba(0,0,0,.5); }
 .help h4 { margin: 0 0 8px; font-family: var(--mono); font-size: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: .06em; }
@@ -195,10 +195,9 @@ pre { margin: 0; padding: 14px; overflow: auto; font-family: var(--mono); font-s
 </div>
 
 <dialog id="dlg" aria-labelledby="dlgTitle">
-  <button class="btn close" id="dlgClose" type="button"></button>
   <div class="dlg">
     <div class="dlg-left">
-      <div class="dlg-head"><h3 id="dlgTitle">Loop</h3><span class="tag" id="dlgTag"></span><span class="dlg-themes" id="dlgThemes"></span></div>
+      <div class="dlg-head"><h3 id="dlgTitle">Loop</h3><span class="tag" id="dlgTag"></span><span class="dlg-themes" id="dlgThemes"></span><button class="btn close" id="dlgClose" type="button"></button></div>
       <div class="frame"><canvas id="dlgCanvas"></canvas><div id="dlgHost" hidden></div></div>
       <p class="dlg-desc" id="dlgDesc"></p>
       <div class="palette" id="palette"></div>
