@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dot Tunnel · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Dot Tunnel (73) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const rings = 24, per = 28, D = Math.hypot(W, H) * 0.6;
+  for (let i = 0; i < rings; i++) {
+    const z = ((i + t * 4) % rings) / rings;
+    const r = Math.pow(z, 2.4) * D;
+    const cx = W / 2 + Math.sin(TAU * z) * W * 0.04;
+    c.fillStyle = i % 4 === 0 ? P.accent : P.fg;
+    c.globalAlpha = Math.min(1, z * 3);
+    for (let k = 0; k < per; k++) {
+      const a = TAU * k / per + z * 2.4;
+      c.beginPath(); c.arc(cx + Math.cos(a) * r, H / 2 + Math.sin(a) * r, Math.max(0.5, z * H / 90), 0, TAU); c.fill();
+    }
+  }
+  c.globalAlpha = 1;
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

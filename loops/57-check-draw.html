@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Check Draw · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #fbfbfb; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Check Draw (57) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#fbfbfb', fg: '#151419', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const ph = (t * 2) % 1, ease = x => x < 0 ? 0 : x > 1 ? 1 : x * x * (3 - 2 * x);
+  const a = ease(ph / 0.3), b = ease((ph - 0.28) / 0.2), out = ease((ph - 0.8) / 0.15);
+  const R = H * 0.24 * (1 + 0.08 * Math.sin(Math.PI * ease((ph - 0.45) / 0.15)));
+  c.save(); c.translate(W / 2, H / 2);
+  c.lineCap = 'round'; c.lineJoin = 'round'; c.lineWidth = H * 0.035;
+  if (b > 0) { c.globalAlpha = (1 - out) * 0.16 * b; c.fillStyle = P.accent; c.beginPath(); c.arc(0, 0, R, 0, TAU); c.fill(); }
+  c.globalAlpha = 1 - out;
+  c.strokeStyle = P.fg;
+  if (a > 0) { c.beginPath(); c.arc(0, 0, R, -Math.PI / 2, -Math.PI / 2 + TAU * a); c.stroke(); }
+  const p1 = [-R * 0.42, R * 0.02], p2 = [-R * 0.12, R * 0.32], p3 = [R * 0.45, -R * 0.3];
+  const l1 = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]), l2 = Math.hypot(p3[0] - p2[0], p3[1] - p2[1]), L = (l1 + l2) * b;
+  if (b > 0) {
+    c.strokeStyle = P.accent; c.beginPath(); c.moveTo(p1[0], p1[1]);
+    if (L <= l1) c.lineTo(p1[0] + (p2[0] - p1[0]) * L / l1, p1[1] + (p2[1] - p1[1]) * L / l1);
+    else { const k = (L - l1) / l2; c.lineTo(p2[0], p2[1]); c.lineTo(p2[0] + (p3[0] - p2[0]) * k, p2[1] + (p3[1] - p2[1]) * k); }
+    c.stroke();
+  }
+  c.restore();
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

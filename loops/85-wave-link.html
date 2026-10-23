@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wave Link · Equilouds 99 Loops</title>
+<style>
+  /* Wave Link (85) · Equilouds 99 Loops · uweschweerlambers.de · License: MIT, free to use, commercial use included */
+  :root { --bg: #fbfbfb; --fg: #151419; --accent: #f56e0f; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--bg); font-size: 18px; }
+
+.link-wave { position: relative; display: inline-block; padding: .2em 0 .5em; color: var(--fg); font: 600 1.3em/1.2 system-ui, sans-serif; text-decoration: none; cursor: pointer; }
+.link-wave::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: .4em; background: var(--accent); opacity: .6; transition: opacity .3s;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='8'%3E%3Cpath d='M0 4 Q5 0 10 4 T20 4' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E") repeat-x 0 50% / 1em 100%;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='8'%3E%3Cpath d='M0 4 Q5 0 10 4 T20 4' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E") repeat-x 0 50% / 1em 100%;
+  animation: wave 1.4s linear infinite; }
+.link-wave:hover::after { opacity: 1; animation-duration: .5s; }
+@keyframes wave { to { -webkit-mask-position: 1em 50%; mask-position: 1em 50%; } }
+</style>
+</head>
+<body>
+  <a class="link-wave" href="#">All projects</a>
+</body>
+</html>

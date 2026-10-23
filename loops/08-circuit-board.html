@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Circuit Board · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Circuit Board (08) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const g = H / 18, rnd = s => { const h = Math.sin(s) * 43758.5453; return h - Math.floor(h); };
+  const paths = [];
+  for (let n = 0; n < 46; n++) {
+    let x = Math.floor(rnd(n * 1.7 + 1) * (W / g)), y = Math.floor(rnd(n * 2.9 + 1) * (H / g));
+    const pts = [[x, y]], dir = rnd(n * 4.1) > 0.5 ? 1 : -1, steps = 4 + Math.floor(rnd(n * 6.3) * 6);
+    for (let s = 0; s < steps; s++) {
+      const r = rnd(n * 13.1 + s * 7.7), run = 1 + Math.floor(rnd(n * 3.1 + s) * 4);
+      x += run * dir; if (r > 0.75) y -= run; else if (r > 0.5) y += run;
+      pts.push([x, y]);
+    }
+    paths.push(pts);
+  }
+  c.lineJoin = 'round'; c.lineCap = 'round';
+  const L = g * 12;
+  paths.forEach((pts, n) => {
+    c.beginPath(); pts.forEach(([x, y]) => c.lineTo(x * g, y * g));
+    c.setLineDash([]); c.strokeStyle = P.fg; c.globalAlpha = 0.3; c.lineWidth = Math.max(1, H / 360); c.stroke();
+    c.setLineDash([g * 1.2, L - g * 1.2]); c.lineDashOffset = -(t * (1 + n % 3) + rnd(n * 9.9)) * L;
+    c.strokeStyle = P.accent; c.globalAlpha = 1; c.lineWidth = Math.max(1.5, H / 220); c.stroke();
+    c.setLineDash([]); c.fillStyle = P.bg; c.strokeStyle = P.fg; c.lineWidth = Math.max(1, H / 400);
+    [pts[0], pts[pts.length - 1]].forEach(([x, y]) => { c.beginPath(); c.arc(x * g, y * g, g * 0.22, 0, TAU); c.fill(); c.stroke(); });
+  });
+  c.globalAlpha = 1;
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

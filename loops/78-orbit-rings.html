@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbit Rings · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #fbfbfb; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Orbit Rings (78) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#fbfbfb', fg: '#151419', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const cx = W / 2, cy = H / 2, R = H * 0.34, e = 0.32;
+  c.lineWidth = H / 400;
+  for (let k = 0; k < 3; k++) {
+    const rot = TAU * k / 3 + TAU * t;
+    c.strokeStyle = P.fg; c.globalAlpha = 0.45;
+    c.beginPath(); c.ellipse(cx, cy, R, R * e, rot, 0, TAU); c.stroke();
+    const a = TAU * t * (k + 2) + k;
+    const px = R * Math.cos(a), py = R * e * Math.sin(a);
+    const x = cx + px * Math.cos(rot) - py * Math.sin(rot);
+    const y = cy + px * Math.sin(rot) + py * Math.cos(rot);
+    c.globalAlpha = 1; c.fillStyle = P.accent;
+    c.beginPath(); c.arc(x, y, H / 55, 0, TAU); c.fill();
+  }
+  c.fillStyle = P.fg;
+  c.beginPath(); c.arc(cx, cy, H / 22 * (1 + 0.15 * Math.sin(TAU * t * 4)), 0, TAU); c.fill();
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

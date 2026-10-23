@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terminal Type · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Terminal Type (07) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const lines = ['$ npx equiloud new loop', '> scaffolding project', '> writing draw(t)', '+ seamless at 12.000 s', '+ 288 frames @ 24 fps', '$ render --4k --prores', '+ done'];
+  const total = lines.reduce((s, l) => s + l.length, 0);
+  const ww = Math.min(W * 0.72, H * 1.35), wh = H * 0.64, x0 = (W - ww) / 2, y0 = (H - wh) / 2, rr = H * 0.02;
+  const out = t > 0.88 ? Math.max(0, 1 - (t - 0.88) / 0.1) : 1;
+  const box = () => { c.beginPath(); c.moveTo(x0 + rr, y0); c.arcTo(x0 + ww, y0, x0 + ww, y0 + wh, rr); c.arcTo(x0 + ww, y0 + wh, x0, y0 + wh, rr); c.arcTo(x0, y0 + wh, x0, y0, rr); c.arcTo(x0, y0, x0 + ww, y0, rr); c.closePath(); };
+  box(); c.fillStyle = P.fg; c.globalAlpha = 0.06; c.fill(); c.strokeStyle = P.fg; c.globalAlpha = 0.3; c.lineWidth = Math.max(1, H / 600); c.stroke();
+  c.globalAlpha = 0.3; c.beginPath(); c.moveTo(x0, y0 + wh * 0.12); c.lineTo(x0 + ww, y0 + wh * 0.12); c.stroke();
+  [P.accent, P.fg, P.fg].forEach((col, k) => { c.globalAlpha = k ? 0.35 : 1; c.fillStyle = col; c.beginPath(); c.arc(x0 + wh * 0.07 + k * wh * 0.06, y0 + wh * 0.06, wh * 0.018, 0, Math.PI * 2); c.fill(); });
+  const fs = wh / 15; c.font = '500 ' + fs + 'px ui-monospace, Menlo, Consolas, monospace'; c.textBaseline = 'top';
+  let left = Math.floor(total * Math.min(1, t / 0.72)), cx = x0 + wh * 0.07, cy = y0 + wh * 0.2;
+  for (const l of lines) {
+    if (left <= 0) break;
+    const s = l.slice(0, left); left -= l.length;
+    c.globalAlpha = out * (l[0] === '>' ? 0.55 : 1); c.fillStyle = l[0] === '+' ? P.accent : P.fg;
+    c.fillText(s, x0 + wh * 0.07, cy);
+    cx = x0 + wh * 0.07 + c.measureText(s).width; if (left > 0) cy += fs * 1.45;
+  }
+  if (Math.floor(t * 24) % 2 === 0) { c.globalAlpha = out; c.fillStyle = P.accent; c.fillRect(cx + fs * 0.15, cy, fs * 0.55, fs); }
+  c.globalAlpha = 1;
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

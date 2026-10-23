@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arrow Nudge · Equilouds 99 Loops</title>
+<style>
+  /* Arrow Nudge (82) · Equilouds 99 Loops · uweschweerlambers.de · License: MIT, free to use, commercial use included */
+  :root { --bg: #151419; --fg: #fbfbfb; --accent: #f56e0f; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--bg); font-size: 18px; }
+
+.btn-arrow { display: inline-flex; align-items: center; gap: .7em; padding: .9em 1.4em .9em 1.8em; border: 1.5px solid var(--fg); border-radius: .4em; background: transparent; color: var(--fg); font: 600 1em/1 system-ui, sans-serif; cursor: pointer; transition: background .25s, color .25s; }
+.btn-arrow span { display: inline-block; color: var(--accent); animation: nudge 1.6s ease-in-out infinite; }
+.btn-arrow:hover { background: var(--fg); color: var(--bg); }
+.btn-arrow:hover span { animation-duration: .6s; }
+@keyframes nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(.35em); } }
+</style>
+</head>
+<body>
+  <button class="btn-arrow">View project <span aria-hidden="true">→</span></button>
+</body>
+</html>

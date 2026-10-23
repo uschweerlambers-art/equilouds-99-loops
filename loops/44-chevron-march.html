@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chevron March · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #f56e0f; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Chevron March (44) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#f56e0f', fg: '#151419', accent: '#fbfbfb' };
+
+function draw(c, t, W, H, P) {
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const g = H / 9, amp = g * 0.6, wl = g * 1.4;
+  c.lineWidth = g * 0.28; c.lineJoin = 'miter';
+  for (let k = -5; k < H / g + 2; k++) {
+    const y0 = (k + t * 4) * g;
+    c.strokeStyle = ((k % 4) + 4) % 4 === 0 ? P.accent : P.fg;
+    c.beginPath();
+    for (let x = -wl, n = 0; x <= W + wl; x += wl / 2, n++) c.lineTo(x, y0 + (n % 2 ? amp : 0));
+    c.stroke();
+  }
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

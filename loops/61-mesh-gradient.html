@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mesh Gradient · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Mesh Gradient (61) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2;
+  const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; };
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  [[P.accent, 0, 1, 0.6], [P.fg, 0.33, -1, 0.65], [P.accent, 0.66, 2, 0.4], [P.fg, 0.5, 1, 0.45]].forEach(([col, off, dir, rad], k) => {
+    const x = W * (0.5 + 0.32 * Math.cos(TAU * (t * dir + off)));
+    const y = H * (0.5 + 0.3 * Math.sin(TAU * (t * dir * 2 + off)));
+    const r = H * rad * (1 + 0.15 * Math.sin(TAU * (t + k * 0.25)));
+    const g = c.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, rgba(col, 0.85)); g.addColorStop(1, rgba(col, 0));
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+  });
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

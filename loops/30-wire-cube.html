@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wire Cube · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Wire Cube (30) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const V = []; for (let i = 0; i < 8; i++) V.push([i & 1 ? 1 : -1, i & 2 ? 1 : -1, i & 4 ? 1 : -1]);
+  const E = []; for (let i = 0; i < 8; i++) for (const b of [1, 2, 4]) if (!(i & b)) E.push([i, i | b]);
+  const cube = (size, ay, ax, col, lw) => {
+    const pts = V.map(([x, y, z]) => {
+      const X = x * Math.cos(ay) + z * Math.sin(ay), Z0 = -x * Math.sin(ay) + z * Math.cos(ay);
+      const Y = y * Math.cos(ax) - Z0 * Math.sin(ax), Z = y * Math.sin(ax) + Z0 * Math.cos(ax);
+      const f = 4 / (4 + Z);
+      return [W / 2 + X * size * f, H / 2 + Y * size * f];
+    });
+    c.strokeStyle = col; c.fillStyle = col; c.lineWidth = lw;
+    E.forEach(([a, b]) => { c.beginPath(); c.moveTo(pts[a][0], pts[a][1]); c.lineTo(pts[b][0], pts[b][1]); c.stroke(); });
+    pts.forEach(p => { c.beginPath(); c.arc(p[0], p[1], lw * 1.8, 0, TAU); c.fill(); });
+  };
+  cube(H * 0.2, TAU * t, 0.55 + 0.2 * Math.sin(TAU * t), P.fg, H / 300);
+  cube(H * 0.09, -TAU * t * 2, 0.55, P.accent, H / 260);
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

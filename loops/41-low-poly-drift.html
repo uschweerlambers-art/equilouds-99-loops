@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Low Poly Drift · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Low Poly Drift (41) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const cols = 14, rows = 9, sx = W / (cols - 3), sy = H / (rows - 3);
+  const pt = [];
+  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+    const h = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453, r = h - Math.floor(h);
+    const x = (i - 1) * sx + (j % 2 ? sx / 2 : 0) + sx * 0.3 * Math.sin(TAU * (t + r));
+    const y = (j - 1) * sy + sy * 0.3 * Math.cos(TAU * (t * (1 + (i % 2)) + r));
+    const z = Math.sin(TAU * (t + i * 0.09 + j * 0.13));
+    pt.push([x, y, z]);
+  }
+  const at = (i, j) => pt[j * cols + i];
+  c.lineJoin = 'round'; c.lineWidth = Math.max(1, H / 900);
+  for (let j = 0; j < rows - 1; j++) for (let i = 0; i < cols - 1; i++) {
+    const a = at(i, j), b = at(i + 1, j), d = at(i, j + 1), e = at(i + 1, j + 1);
+    const tris = j % 2 ? [[a, e, d], [a, b, e]] : [[a, b, d], [b, e, d]];
+    for (const [p, q, r] of tris) {
+      const ux = q[0] - p[0], uy = q[1] - p[1], uz = (q[2] - p[2]) * sy;
+      const vx = r[0] - p[0], vy = r[1] - p[1], vz = (r[2] - p[2]) * sy;
+      let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      const len = Math.hypot(nx, ny, nz) || 1; nx /= len; ny /= len; nz /= len;
+      if (nz < 0) { nx = -nx; ny = -ny; nz = -nz; }
+      const lit = Math.max(0, -0.5 * nx - 0.6 * ny + 0.62 * nz);
+      c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.lineTo(r[0], r[1]); c.closePath();
+      c.globalAlpha = 0.12 + 0.88 * lit * lit; c.fillStyle = P.fg; c.fill();
+      c.globalAlpha = 0.3; c.strokeStyle = P.accent; c.stroke();
+    }
+  }
+  c.globalAlpha = 1; c.fillStyle = P.accent;
+  pt.forEach(([x, y, z]) => { if (z > 0.8) { c.beginPath(); c.arc(x, y, H / 160, 0, TAU); c.fill(); } });
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ridge Lines · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #fbfbfb; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Ridge Lines (23) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#fbfbfb', fg: '#151419', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const rows = 34, top = H * 0.14, gap = (H * 0.8) / rows;
+  c.lineWidth = H / 520; c.lineJoin = 'round';
+  for (let r = 0; r < rows; r++) {
+    const y0 = top + r * gap, pts = [];
+    for (let x = 0; x <= W + 1; x += W / 160) {
+      const u = x / W;
+      const env = Math.exp(-Math.pow((u - 0.5) * 3.2, 2));
+      const n = Math.sin(u * 23 + r * 1.7 + TAU * t) * 0.5
+              + Math.sin(u * 41 - r * 0.9 - TAU * t * 2) * 0.3
+              + Math.sin(u * 9 + r * 2.3 + TAU * t * 3) * 0.2;
+      pts.push([x, y0 - env * (0.6 + 0.4 * n) * gap * 4.5]);
+    }
+    c.beginPath(); pts.forEach(([x, y]) => c.lineTo(x, y));
+    c.lineTo(W, H); c.lineTo(0, H); c.closePath();
+    c.fillStyle = P.bg; c.fill();
+    c.beginPath(); pts.forEach(([x, y]) => c.lineTo(x, y));
+    c.strokeStyle = r === 17 ? P.accent : P.fg;
+    c.stroke();
+  }
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

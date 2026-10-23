@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hexaflake · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Hexaflake (48) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const hex = (x, y, r, rot) => { c.beginPath(); for (let k = 0; k < 6; k++) { const a = rot + TAU * k / 6; c.lineTo(x + r * Math.cos(a), y + r * Math.sin(a)); } c.closePath(); };
+  const rec = (x, y, r, d, rot, col) => {
+    if (d === 0) { c.fillStyle = col; hex(x, y, r * 0.9, rot); c.fill(); return; }
+    const r2 = r / 3, sp = 1 + 0.22 * Math.sin(TAU * (t * 2 - d * 0.15)), rr = rot + Math.sin(TAU * t) * 0.12 * d;
+    rec(x, y, r2, d - 1, rr, col);
+    for (let k = 0; k < 6; k++) {
+      const a = rot + TAU * k / 6;
+      rec(x + Math.cos(a) * r2 * 2 * sp, y + Math.sin(a) * r2 * 2 * sp, r2, d - 1, rr, d === 4 && k === 0 ? P.accent : col);
+    }
+  };
+  rec(W / 2, H / 2, H * 0.46, 4, TAU * t, P.fg);
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

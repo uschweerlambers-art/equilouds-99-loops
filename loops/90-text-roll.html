@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text Roll · Equilouds 99 Loops</title>
+<style>
+  /* Text Roll (90) · Equilouds 99 Loops · uweschweerlambers.de · License: MIT, free to use, commercial use included */
+  :root { --bg: #151419; --fg: #fbfbfb; --accent: #f56e0f; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--bg); font-size: 18px; }
+
+.btn-roll { position: relative; overflow: hidden; padding: .9em 1.8em; border: 1.5px solid var(--fg); border-radius: 999px; background: transparent; color: var(--fg); font: 600 1em/1.2 system-ui, sans-serif; cursor: pointer; transition: border-color .3s, color .3s; }
+.btn-roll span { position: relative; display: block; animation: roll 3.5s cubic-bezier(.7,0,.2,1) infinite; }
+.btn-roll span::after { content: attr(data-text); position: absolute; left: 0; right: 0; top: 100%; text-align: center; }
+.btn-roll:hover { border-color: var(--accent); color: var(--accent); }
+.btn-roll:hover span { animation: none; transform: translateY(-100%); transition: transform .45s cubic-bezier(.7,0,.2,1); }
+@keyframes roll { 0%, 70% { transform: translateY(0); } 85%, 100% { transform: translateY(-100%); } }
+</style>
+</head>
+<body>
+  <button class="btn-roll"><span data-text="Get in touch">Get in touch</span></button>
+</body>
+</html>

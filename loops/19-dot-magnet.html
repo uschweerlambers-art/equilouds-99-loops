@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dot Magnet · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #fbfbfb; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Dot Magnet (19) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#fbfbfb', fg: '#151419', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const g = H / 18;
+  const ax = W / 2 + W * 0.3 * Math.sin(TAU * t), ay = H / 2 + H * 0.28 * Math.sin(TAU * t * 2);
+  for (let y = g / 2; y < H + g; y += g) for (let x = g / 2; x < W + g; x += g) {
+    const dx = ax - x, dy = ay - y, d = Math.hypot(dx, dy) / H;
+    const pull = Math.exp(-d * d * 14) * 0.6;
+    c.fillStyle = pull > 0.35 ? P.accent : P.fg;
+    c.globalAlpha = 0.3 + 0.7 * Math.min(1, pull * 2.2);
+    c.beginPath(); c.arc(x + dx * pull, y + dy * pull, g * (0.07 + 0.3 * pull), 0, TAU); c.fill();
+  }
+  c.globalAlpha = 1;
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Code Scroll · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Code Scroll (06) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const lh = H / 26, M = 52, cw = lh * 0.55, x0 = W * 0.1;
+  const rnd = s => { const h = Math.sin(s) * 43758.5453; return h - Math.floor(h); };
+  const scroll = t * M, first = Math.floor(scroll), fr = scroll - first;
+  c.globalAlpha = 0.08; c.fillStyle = P.accent; c.fillRect(0, H / 2 - lh * 0.5, W, lh);
+  c.globalAlpha = 0.2; c.fillStyle = P.fg; c.fillRect(x0 - cw * 1.2, 0, Math.max(1, H / 900), H);
+  c.font = (lh * 0.45) + 'px ui-monospace, Menlo, monospace'; c.textBaseline = 'middle'; c.textAlign = 'right';
+  for (let r = -1; r < H / lh + 1; r++) {
+    const n = first + r, line = ((n % M) + M) % M, y = (r - fr) * lh;
+    c.globalAlpha = 0.35; c.fillStyle = P.fg;
+    c.fillText(String(line + 1), x0 - cw * 2, y + lh * 0.5);
+    if (rnd(line * 5.1) < 0.15) continue;
+    let x = x0 + Math.floor(rnd(line * 1.7) * 4) * cw * 2;
+    const toks = 2 + Math.floor(rnd(line * 2.3) * 6);
+    for (let k = 0; k < toks; k++) {
+      const len = 2 + Math.floor(rnd(line * 9.1 + k * 3.3) * 9), kind = rnd(line * 4.7 + k * 1.9);
+      c.fillStyle = kind < 0.2 ? P.accent : P.fg;
+      c.globalAlpha = kind < 0.2 ? 0.95 : kind < 0.55 ? 0.7 : 0.35;
+      c.fillRect(x, y + lh * 0.28, len * cw, lh * 0.44);
+      x += (len + 1) * cw;
+    }
+  }
+  c.textAlign = 'left'; c.globalAlpha = 1;
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

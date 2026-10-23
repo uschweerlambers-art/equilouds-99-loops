@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chip Pulse · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Chip Pulse (09) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const s = H * 0.26, L = H * 0.3, pins = 6;
+  const rnd = q => { const h = Math.sin(q) * 43758.5453; return h - Math.floor(h); };
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  for (let side = 0; side < 4; side++) {
+    c.save(); c.translate(W / 2, H / 2); c.rotate(side * Math.PI / 2);
+    for (let p = 0; p < pins; p++) {
+      const off = (p - (pins - 1) / 2) * s / pins;
+      const path = [[s / 2, off], [s / 2 + L * 0.35, off], [s / 2 + L * 0.65, off * 1.8], [s / 2 + L, off * 1.8]];
+      c.strokeStyle = P.fg; c.globalAlpha = 0.45; c.lineWidth = Math.max(1, H / 400);
+      c.beginPath(); path.forEach(q => c.lineTo(q[0], q[1])); c.stroke();
+      c.globalAlpha = 1; c.fillStyle = P.bg; c.beginPath(); c.arc(path[3][0], path[3][1], H / 140, 0, TAU); c.fill(); c.stroke();
+      const seg = [], tot = [0];
+      for (let k = 0; k < 3; k++) { const l = Math.hypot(path[k + 1][0] - path[k][0], path[k + 1][1] - path[k][1]); seg.push(l); tot.push(tot[k] + l); }
+      const u = ((t * 2 + rnd(side * 10 + p + 1)) % 1) * tot[3];
+      let k = 0; while (k < 2 && u > tot[k + 1]) k++;
+      const f = (u - tot[k]) / seg[k], x = path[k][0] + (path[k + 1][0] - path[k][0]) * f, y = path[k][1] + (path[k + 1][1] - path[k][1]) * f;
+      c.fillStyle = P.accent; c.beginPath(); c.arc(x, y, H / 160, 0, TAU); c.fill();
+    }
+    c.restore();
+  }
+  c.fillStyle = P.fg; c.globalAlpha = 0.1; c.fillRect(W / 2 - s / 2, H / 2 - s / 2, s, s);
+  c.globalAlpha = 1; c.strokeStyle = P.fg; c.lineWidth = H / 300; c.strokeRect(W / 2 - s / 2, H / 2 - s / 2, s, s);
+  c.strokeStyle = P.accent; c.lineWidth = H / 260;
+  const hr = s * 0.24 * (1 + 0.05 * Math.sin(TAU * t * 4));
+  c.beginPath(); for (let k = 0; k < 6; k++) { const a = TAU * k / 6 - Math.PI / 2; c.lineTo(W / 2 + Math.cos(a) * hr, H / 2 + Math.sin(a) * hr); } c.closePath(); c.stroke();
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

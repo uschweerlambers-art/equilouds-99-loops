@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Truchet Flip · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #f56e0f; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Truchet Flip (56) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#f56e0f', fg: '#151419', accent: '#fbfbfb' };
+
+function draw(c, t, W, H, P) {
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const s = H / 6, cols = Math.ceil(W / s), rows = Math.ceil(H / s);
+  c.lineWidth = s / 7; c.lineCap = 'round';
+  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+    const h = Math.sin(i * 127.1 + j * 311.7) * 43758.5453, rnd = h - Math.floor(h);
+    const u = t * 4 + rnd, ph = u % 1;
+    const ease = ph < 0.25 ? (1 - Math.cos(Math.PI * ph / 0.25)) / 2 : 1;
+    const ang = (Math.floor(u) + ease) * Math.PI / 2 + (rnd > 0.5 ? Math.PI / 2 : 0);
+    c.save(); c.translate(i * s + s / 2, j * s + s / 2); c.rotate(ang);
+    c.strokeStyle = (i * 3 + j) % 7 === 0 ? P.accent : P.fg;
+    c.beginPath(); c.arc(-s / 2, -s / 2, s / 2, 0, Math.PI / 2); c.stroke();
+    c.beginPath(); c.arc(s / 2, s / 2, s / 2, Math.PI, Math.PI * 1.5); c.stroke();
+    c.restore();
+  }
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

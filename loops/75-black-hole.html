@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Black Hole · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Black Hole (75) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const cx = W / 2, cy = H / 2, R = H * 0.11;
+  const rnd = s => { const h = Math.sin(s) * 43758.5453; return h - Math.floor(h); };
+  const parts = [];
+  for (let i = 0; i < 600; i++) {
+    const r1 = rnd(i * 1.3 + 0.5), r2 = rnd(i * 7.9 + 0.5);
+    const rad = R * (1.5 + r1 * 2.7), sp = 1 + Math.floor((1 - r1) * 4), a = TAU * (r2 + t * sp);
+    parts.push([cx + Math.cos(a) * rad * 1.7, cy + Math.sin(a) * rad * 0.3, Math.sin(a), r1]);
+  }
+  const draw = p => { const s = H / 380 * (1 + (1 - p[3]) * 1.5); c.globalAlpha = 0.35 + 0.65 * (1 - p[3]); c.fillStyle = p[3] < 0.35 ? P.accent : P.fg; c.fillRect(p[0] - s / 2, p[1] - s / 2, s, s); };
+  parts.filter(p => p[2] < 0).forEach(draw);
+  c.globalAlpha = 0.85; c.strokeStyle = P.accent; c.lineWidth = H * 0.012;
+  c.beginPath(); c.ellipse(cx, cy, R * 1.45, R * 1.3, 0, Math.PI, TAU); c.stroke();
+  c.globalAlpha = 0.4; c.lineWidth = H * 0.004; c.beginPath(); c.arc(cx, cy, R * 1.12, 0, TAU); c.stroke();
+  c.globalAlpha = 1; c.fillStyle = P.bg; c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.fill();
+  parts.filter(p => p[2] >= 0).forEach(draw);
+  c.globalAlpha = 1;
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

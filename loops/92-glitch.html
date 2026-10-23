@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glitch · Equilouds 99 Loops</title>
+<style>
+  /* Glitch (92) · Equilouds 99 Loops · uweschweerlambers.de · License: MIT, free to use, commercial use included */
+  :root { --bg: #151419; --fg: #fbfbfb; --accent: #f56e0f; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--bg); font-size: 18px; }
+
+.btn-glitch { position: relative; padding: .9em 1.9em; border: 0; background: var(--fg); color: var(--bg); font: 800 1em/1 system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; animation: glitch 4s steps(1) infinite; }
+.btn-glitch:hover { animation-duration: .7s; }
+@keyframes glitch {
+  0%, 84%, 100% { text-shadow: none; transform: none; clip-path: none; }
+  86% { text-shadow: -.12em 0 var(--accent), .12em 0 #00e5ff; transform: translateX(.06em) skewX(-6deg); }
+  89% { text-shadow: .1em 0 var(--accent), -.1em 0 #00e5ff; transform: translateX(-.08em); clip-path: inset(12% 0 38% 0); }
+  92% { text-shadow: none; transform: none; clip-path: none; }
+  95% { text-shadow: -.06em 0 var(--accent); transform: translateX(.04em); }
+}
+</style>
+</head>
+<body>
+  <button class="btn-glitch">Error 404</button>
+</body>
+</html>

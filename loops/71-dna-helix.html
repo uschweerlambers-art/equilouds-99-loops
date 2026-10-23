@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DNA Helix · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// DNA Helix (71) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const n = 30, x0 = W * 0.12, x1 = W * 0.88, A = H * 0.22, items = [];
+  c.lineWidth = Math.max(1, H / 400);
+  for (let i = 0; i <= n; i++) {
+    const u = i / n, x = x0 + (x1 - x0) * u, ph = TAU * (u * 2 + t);
+    const y1 = H / 2 + Math.sin(ph) * A, y2 = H / 2 - Math.sin(ph) * A, z = Math.cos(ph);
+    c.strokeStyle = P.fg; c.globalAlpha = 0.22; c.beginPath(); c.moveTo(x, y1); c.lineTo(x, y2); c.stroke();
+    items.push([x, y1, z, 0], [x, y2, -z, 1]);
+  }
+  items.sort((a, b) => a[2] - b[2]).forEach(([x, y, z, s]) => {
+    const f = (z + 1) / 2;
+    c.globalAlpha = 0.35 + 0.65 * f; c.fillStyle = s ? P.accent : P.fg;
+    c.beginPath(); c.arc(x, y, H * (0.01 + 0.014 * f), 0, TAU); c.fill();
+  });
+  c.globalAlpha = 1;
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

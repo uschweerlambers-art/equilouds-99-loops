@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ripple Fill · Equilouds 99 Loops</title>
+<style>
+  /* Ripple Fill (94) · Equilouds 99 Loops · uweschweerlambers.de · License: MIT, free to use, commercial use included */
+  :root { --bg: #fbfbfb; --fg: #151419; --accent: #f56e0f; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--bg); font-size: 18px; }
+
+.btn-ripple { position: relative; overflow: hidden; padding: .95em 2em; border: 1.5px solid var(--fg); border-radius: .5em; background: transparent; color: var(--fg); font: 600 1em/1 system-ui, sans-serif; cursor: pointer; isolation: isolate; transition: color .35s .05s, border-color .35s; }
+.btn-ripple::before { content: ""; position: absolute; left: 50%; top: 50%; width: 0; aspect-ratio: 1; border-radius: 50%; background: var(--accent); transform: translate(-50%, -50%); z-index: -1; transition: width .5s cubic-bezier(.2,.8,.2,1); }
+.btn-ripple::after { content: ""; position: absolute; left: 50%; top: 50%; width: .3em; aspect-ratio: 1; border-radius: 50%; border: 1px solid var(--accent); transform: translate(-50%, -50%); animation: drop 2.4s ease-out infinite; z-index: -1; }
+.btn-ripple:hover { color: var(--bg); border-color: var(--accent); }
+.btn-ripple:hover::before { width: 120%; }
+@keyframes drop { from { width: .3em; opacity: .9; } to { width: 110%; opacity: 0; } }
+</style>
+</head>
+<body>
+  <button class="btn-ripple">Send request</button>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Noise Cube · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Noise Cube (27) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const N = 6;   // 6 oder 12 Würfel pro Kante / 6 or 12 cubes per edge
+  const hx = s => [1, 3, 5].map(k => parseInt(s.slice(k, k + 2), 16));
+  const B = hx(P.bg), F = hx(P.fg), A = hx(P.accent);
+  const mix = (X, k) => 'rgb(' + B.map((b, i) => Math.round(b + (X[i] - b) * k)).join(',') + ')';
+  const rnd = s => { const h = Math.sin(s) * 43758.5453; return h - Math.floor(h); };
+  const ay = TAU * t + 0.6, ax = 0.55 + 0.12 * Math.sin(TAU * t);
+  const rot = ([x, y, z]) => {
+    const X = x * Math.cos(ay) + z * Math.sin(ay), Z0 = -x * Math.sin(ay) + z * Math.cos(ay);
+    return [X, y * Math.cos(ax) - Z0 * Math.sin(ax), y * Math.sin(ax) + Z0 * Math.cos(ax)];
+  };
+  const ex = rot([1, 0, 0]), ey = rot([0, 1, 0]), ez = rot([0, 0, 1]), L = [-0.45, -0.7, -0.55];
+  const faces = [];
+  [[ex, 1], [ex, -1], [ey, 1], [ey, -1], [ez, 1], [ez, -1]].forEach(([n, s]) => {
+    const nn = n.map(v => v * s);
+    if (nn[2] < 0) faces.push({ n: nn, u: n === ex ? ey : ex, v: n === ez ? ey : ez, lit: Math.max(0, nn[0] * L[0] + nn[1] * L[1] + nn[2] * L[2]) });
+  });
+  const size = H * 0.34, cell = 2 / N, items = [];
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) for (let k = 0; k < N; k++) {
+    const x = -1 + cell * (i + 0.5), y = -1 + cell * (j + 0.5), z = -1 + cell * (k + 0.5);
+    const id = i * 131 + j * 17 + k * 7 + 1, r1 = rnd(id * 1.7), r2 = rnd(id * 3.3);
+    const field = Math.sin(x * 2.1 + TAU * t) * Math.sin(y * 1.7 - TAU * t * 2 + 1) * Math.sin(z * 2.4 + TAU * t + 2);
+    const v = 0.55 + 0.35 * field + 0.35 * Math.sin(TAU * (t * (1 + Math.floor(r1 * 3)) + r2));
+    const s = Math.max(0, Math.min(1, (v - 0.35) / 0.4));
+    if (s < 0.04) continue;
+    items.push([rot([x, y, z]), s * cell / 2 * 0.92, v > 1.05]);
+  }
+  items.sort((a, b) => b[0][2] - a[0][2]);
+  const proj = q => { const f = 6 / (6 + q[2]); return [W / 2 + q[0] * size * f, H / 2 + q[1] * size * f]; };
+  c.lineJoin = 'round'; c.lineWidth = Math.max(0.5, H / 1400); c.strokeStyle = P.bg;
+  items.forEach(([p, h, hot]) => {
+    faces.forEach(f => {
+      const cx = p[0] + f.n[0] * h, cy = p[1] + f.n[1] * h, cz = p[2] + f.n[2] * h;
+      c.beginPath();
+      [[1, 1], [1, -1], [-1, -1], [-1, 1]].forEach(([a, b]) => {
+        const q = proj([cx + (f.u[0] * a + f.v[0] * b) * h, cy + (f.u[1] * a + f.v[1] * b) * h, cz + (f.u[2] * a + f.v[2] * b) * h]);
+        c.lineTo(q[0], q[1]);
+      });
+      c.closePath();
+      c.fillStyle = hot ? mix(A, 0.55 + 0.45 * f.lit) : mix(F, 0.1 + 0.85 * f.lit); c.fill();
+      c.globalAlpha = 0.35; c.stroke(); c.globalAlpha = 1;
+    });
+  });
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

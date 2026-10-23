@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Code Rain · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Code Rain (05) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const fs = H / 34, cw = fs * 0.75, cols = Math.ceil(W / cw), rows = Math.ceil(H / fs) + 1;
+  const G = '01<>{}[]/=+*#$;:ABCDEF0123456789';
+  const rnd = s => { const h = Math.sin(s) * 43758.5453; return h - Math.floor(h); };
+  c.font = '600 ' + fs + 'px ui-monospace, Menlo, Consolas, monospace'; c.textBaseline = 'top';
+  for (let i = 0; i < cols; i++) {
+    const sp = 1 + Math.floor(rnd(i * 3.1) * 3), len = 8 + Math.floor(rnd(i * 7.7) * 16);
+    const head = Math.floor(((rnd(i * 1.3) + t * sp) % 1) * (rows + len));
+    for (let k = 0; k < len; k++) {
+      const r = head - k;
+      if (r < 0 || r >= rows) continue;
+      const ch = G[Math.floor(rnd(i * 13.1 + r * 7.3 + (Math.floor(t * 48 + rnd(i + r)) % 48) * 0.37) * G.length)];
+      c.fillStyle = k === 0 ? P.accent : P.fg;
+      c.globalAlpha = k === 0 ? 1 : 0.85 * (1 - k / len);
+      c.fillText(ch, i * cw, r * fs);
+    }
+  }
+  c.globalAlpha = 1;
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

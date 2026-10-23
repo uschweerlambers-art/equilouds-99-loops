@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Koch Morph · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Koch Morph (47) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2, s3 = Math.sqrt(3) / 2;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const flake = (R, rot, depth, k, col, fill) => {
+    const pts = [];
+    const seg = (ax, ay, bx, by, d) => {
+      if (d === 0) { pts.push([ax, ay]); return; }
+      const dx = (bx - ax) / 3, dy = (by - ay) / 3, px = ax + dx, py = ay + dy, qx = ax + 2 * dx, qy = ay + 2 * dy;
+      const mx = (px + qx) / 2 + dy * s3 * 2 * k, my = (py + qy) / 2 - dx * s3 * 2 * k;
+      seg(ax, ay, px, py, d - 1); seg(px, py, mx, my, d - 1); seg(mx, my, qx, qy, d - 1); seg(qx, qy, bx, by, d - 1);
+    };
+    const V = [0, 1, 2].map(i => [W / 2 + R * Math.cos(rot + TAU * i / 3 - Math.PI / 2), H / 2 + R * Math.sin(rot + TAU * i / 3 - Math.PI / 2)]);
+    for (let i = 0; i < 3; i++) seg(V[i][0], V[i][1], V[(i + 1) % 3][0], V[(i + 1) % 3][1], depth);
+    c.beginPath(); pts.forEach(p => c.lineTo(p[0], p[1])); c.closePath();
+    if (fill) { c.globalAlpha = 0.1; c.fillStyle = col; c.fill(); }
+    c.globalAlpha = 1; c.strokeStyle = col; c.lineWidth = H / 220; c.lineJoin = 'round'; c.stroke();
+  };
+  const k = 0.5 - 0.5 * Math.cos(TAU * t);
+  flake(H * 0.3, TAU * t / 3, 4, k, P.accent, true);
+  flake(H * 0.14, -TAU * t / 3 * 2, 3, 1 - k, P.fg, false);
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

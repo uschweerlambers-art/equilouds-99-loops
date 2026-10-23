@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signal Bars · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Signal Bars (10) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const n = 64, bw = W / n, seg = H / 54;
+  for (let i = 0; i < n; i++) {
+    const u = i / n;
+    const v = 0.5 + 0.25 * Math.sin(TAU * (u * 2 + t * 2)) + 0.15 * Math.sin(TAU * (u * 5 - t * 3)) + 0.1 * Math.sin(TAU * (u * 11 + t * 5));
+    const hh = H * 0.42 * v * (0.35 + 0.65 * Math.exp(-Math.pow((u - 0.5) * 2.4, 2)));
+    const segs = Math.max(1, Math.floor(hh / seg));
+    for (let k = 0; k < segs; k++) {
+      c.fillStyle = k > segs - 3 ? P.accent : P.fg;
+      c.globalAlpha = 1;
+      c.fillRect(i * bw + bw * 0.15, H / 2 - k * seg - seg * 0.8, bw * 0.7, seg * 0.7);
+      c.globalAlpha = 0.3;
+      c.fillRect(i * bw + bw * 0.15, H / 2 + k * seg + seg * 0.2, bw * 0.7, seg * 0.7);
+    }
+  }
+  c.globalAlpha = 1;
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

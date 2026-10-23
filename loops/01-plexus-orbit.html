@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plexus Orbit · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Plexus Orbit (01) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const N = 70, pts = [];
+  for (let i = 0; i < N; i++) {
+    const h1 = Math.sin(i * 12.9898) * 43758.5453, r1 = h1 - Math.floor(h1);
+    const h2 = Math.sin(i * 78.233) * 12543.123, r2 = h2 - Math.floor(h2);
+    const fx = 1 + (i % 3), fy = 1 + ((i + 1) % 2);
+    const x = W * (0.5 + 0.5 * Math.sin(TAU * (t * fx + r1)) * (0.35 + 0.65 * r2));
+    const y = H * (0.5 + 0.48 * Math.cos(TAU * (t * fy + r2)) * (0.4 + 0.6 * r1));
+    pts.push([x, y]);
+  }
+  const L = H / 4.5;
+  c.lineWidth = Math.max(1, H / 900);
+  c.strokeStyle = P.fg;
+  for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
+    const d = Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]);
+    if (d < L) {
+      c.globalAlpha = (1 - d / L) * 0.8;
+      c.beginPath(); c.moveTo(pts[i][0], pts[i][1]); c.lineTo(pts[j][0], pts[j][1]); c.stroke();
+    }
+  }
+  c.globalAlpha = 1; c.fillStyle = P.accent;
+  for (const [x, y] of pts) { c.beginPath(); c.arc(x, y, H / 200, 0, TAU); c.fill(); }
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

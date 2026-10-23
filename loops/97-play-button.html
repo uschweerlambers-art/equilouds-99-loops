@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Play Button · Equilouds 99 Loops</title>
+<style>
+  /* Play Button (97) · Equilouds 99 Loops · uweschweerlambers.de · License: MIT, free to use, commercial use included */
+  :root { --bg: #f56e0f; --fg: #151419; --accent: #fbfbfb; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--bg); font-size: 18px; }
+
+.btn-play { position: relative; width: 4.4em; height: 4.4em; border: 0; border-radius: 50%; background: var(--fg); cursor: pointer; isolation: isolate; transition: transform .3s; }
+.btn-play::before { content: ""; position: absolute; left: 54%; top: 50%; width: 1.3em; height: 1.5em; background: var(--accent); clip-path: polygon(0 0, 100% 50%, 0 100%); transform: translate(-50%, -50%); transition: transform .3s; }
+.btn-play::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--fg); animation: ring 2s ease-out infinite; z-index: -1; }
+.btn-play:hover { transform: scale(1.08); }
+.btn-play:hover::before { transform: translate(-50%, -50%) scale(1.15); }
+@keyframes ring { from { transform: scale(1); opacity: .7; } to { transform: scale(1.7); opacity: 0; } }
+</style>
+</head>
+<body>
+  <button class="btn-play" aria-label="Play video"></button>
+</body>
+</html>

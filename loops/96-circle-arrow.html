@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Circle Arrow · Equilouds 99 Loops</title>
+<style>
+  /* Circle Arrow (96) · Equilouds 99 Loops · uweschweerlambers.de · License: MIT, free to use, commercial use included */
+  :root { --bg: #151419; --fg: #fbfbfb; --accent: #f56e0f; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--bg); font-size: 18px; }
+
+.btn-circle { position: relative; width: 4.4em; height: 4.4em; border: 0; border-radius: 50%; background: transparent; color: var(--fg); font: 400 1em/1 system-ui, sans-serif; cursor: pointer; display: grid; place-items: center; isolation: isolate; transition: color .3s; }
+.btn-circle span { font-size: 1.6em; transition: transform .35s; }
+.btn-circle::before { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px dashed color-mix(in srgb, var(--fg) 50%, transparent); animation: spin 14s linear infinite; }
+.btn-circle::after { content: ""; position: absolute; inset: .4em; border-radius: 50%; background: var(--accent); transform: scale(.18); z-index: -1; transition: transform .4s cubic-bezier(.2,.8,.2,1); }
+.btn-circle:hover { color: var(--bg); }
+.btn-circle:hover::after { transform: scale(1); }
+.btn-circle:hover::before { animation-duration: 3s; border-color: var(--accent); }
+.btn-circle:hover span { transform: rotate(45deg); }
+@keyframes spin { to { transform: rotate(1turn); } }
+</style>
+</head>
+<body>
+  <button class="btn-circle" aria-label="Next"><span>↗</span></button>
+</body>
+</html>

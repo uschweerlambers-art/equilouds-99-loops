@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gradient Flow · Equilouds 99 Loops</title>
+<style>
+  /* Gradient Flow (93) · Equilouds 99 Loops · uweschweerlambers.de · License: MIT, free to use, commercial use included */
+  :root { --bg: #151419; --fg: #fbfbfb; --accent: #f56e0f; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--bg); font-size: 18px; }
+
+.btn-flow { padding: .95em 2em; border: 0; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--fg), var(--accent)); background-size: 200% 100%; color: var(--bg); font: 700 1em/1 system-ui, sans-serif; cursor: pointer; animation: flow 5s linear infinite; transition: transform .2s; }
+.btn-flow:hover { transform: scale(1.04); animation-duration: 1.6s; }
+@keyframes flow { to { background-position: 200% 0; } }
+</style>
+</head>
+<body>
+  <button class="btn-flow">Explore more</button>
+</body>
+</html>
