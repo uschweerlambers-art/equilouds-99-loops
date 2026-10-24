@@ -68,7 +68,7 @@ Buttons are pure CSS. Colors run through `--bg`, `--fg` and `--accent`; size sca
 | 22 | [Contour Drift](loops/22-contour-drift.html) | Canvas | Contour lines flowing slowly out of the center, breathing as they go. Calm enough for subtitles. |
 | 23 | [Ridge Lines](loops/23-ridge-lines.html) | Canvas | Stacked lines like a mountain profile. Three overlaid waves keep the motion calm. |
 | 24 | [Topo Map](loops/24-topo-map.html) | Canvas | Real contour lines via marching squares from a moving landscape. Every fifth line is emphasized, like on a map. |
-| 25 | [Sliced Topo](loops/25-sliced-topo.html) | Canvas | A block of terrain made of 18 thin slices in isometric view, like an architectural model. Hills and waves drift slowly through the relief. |
+| 25 | [Sliced Topo](loops/25-sliced-topo.html) | Canvas | A square block of terrain made of 22 white slices on orange. Peaks rise and sink while a flat valley sweeps diagonally through. |
 | 26 | [Contour Island 3D](loops/26-contour-island-3d.html) | Canvas | Contour lines of an island, stacked in 3D. Four peaks grow and shrink, the camera pans along, and hidden lines disappear behind the hills. |
 
 ### 3D solids (9)
