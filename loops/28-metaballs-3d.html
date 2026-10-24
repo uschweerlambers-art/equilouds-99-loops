@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Metaballs 3D · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Metaballs 3D (28) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2, ph = t % 1;
+  // Glänzende 3D-Metaballs. Aus dem Feld s wird eine Höhe h = r·sqrt(1 - 1/s): für eine einzelne Kugel
+  // ist das exakt eine Halbkugel, mehrere verschmelzen weich. Normale aus dem Gradienten, dann Phong-Licht.
+  const img = c.createImageData(W, H), d = img.data;
+  const hx = s => [1, 3, 5].map(k => parseInt(s.slice(k, k + 2), 16));
+  const B = hx(P.bg), F = hx(P.fg), A = hx(P.accent);
+  const cl = x => x < 0 ? 0 : x > 1 ? 1 : x;
+  const n = 5, bx = [], by = [], br = [];
+  for (let k = 0; k < n; k++) {
+    const fx = 1 + (k % 2), fy = 1 + ((k + 1) % 3 === 0 ? 2 : 1);
+    bx.push(W / 2 + H * 0.55 * Math.sin(TAU * (ph * fx + k * 0.21)));
+    by.push(H / 2 + H * 0.3 * Math.cos(TAU * (ph * fy + k * 0.37)));
+    br.push(Math.pow(H * (0.075 + 0.025 * (k % 3)), 2));
+  }
+  const R0 = H * 0.1;
+  const L = [-0.45, -0.55, 0.7], Ll = Math.hypot(L[0], L[1], L[2]); L[0] /= Ll; L[1] /= Ll; L[2] /= Ll;
+  const Hv = [L[0], L[1], L[2] + 1], Hl = Math.hypot(Hv[0], Hv[1], Hv[2]); Hv[0] /= Hl; Hv[1] /= Hl; Hv[2] /= Hl;
+  const S = 4;
+  for (let y0 = 0; y0 < H; y0 += S) for (let x0 = 0; x0 < W; x0 += S) {
+    // Block ganz im Hintergrund? Dann flach füllen.
+    const qx = x0 + S / 2, qy = y0 + S / 2;
+    let s0 = 0, g0x = 0, g0y = 0;
+    for (let k = 0; k < n; k++) { const dx = qx - bx[k], dy = qy - by[k], q = dx * dx + dy * dy + 1, v = br[k] / q; s0 += v; const f = 2 * v / q; g0x -= f * dx; g0y -= f * dy; }
+    const far = (1 - s0) / (Math.hypot(g0x, g0y) + 1e-9) > S * 1.5;
+    for (let y = y0; y < Math.min(H, y0 + S); y++) for (let x = x0; x < Math.min(W, x0 + S); x++) {
+      const o = (y * W + x) * 4;
+      if (far) { d[o] = B[0]; d[o + 1] = B[1]; d[o + 2] = B[2]; d[o + 3] = 255; continue; }
+      let s = 0, gx = 0, gy = 0;
+      for (let k = 0; k < n; k++) { const dx = x - bx[k], dy = y - by[k], q = dx * dx + dy * dy + 1, v = br[k] / q; s += v; const f = 2 * v / q; gx -= f * dx; gy -= f * dy; }
+      const cov = cl(0.5 + (s - 1) / (Math.hypot(gx, gy) + 1e-9));
+      let r = B[0], g = B[1], b = B[2];
+      if (cov > 0) {
+        const u = Math.max(1e-4, 1 - 1 / s), k2 = R0 / (2 * Math.sqrt(u) * s * s);
+        let nx = -gx * k2, ny = -gy * k2, nz = 1; const nl = Math.hypot(nx, ny, nz); nx /= nl; ny /= nl; nz /= nl;
+        const diff = Math.max(0, nx * L[0] + ny * L[1] + nz * L[2]);
+        const spec = Math.pow(Math.max(0, nx * Hv[0] + ny * Hv[1] + nz * Hv[2]), 60);
+        const rim = Math.pow(1 - nz, 3) * 0.5;
+        const sh = 0.18 + 0.82 * diff;
+        r = A[0] * sh + (F[0] - A[0] * sh) * spec + F[0] * rim * 0.15; g = A[1] * sh + (F[1] - A[1] * sh) * spec + F[1] * rim * 0.15; b = A[2] * sh + (F[2] - A[2] * sh) * spec + F[2] * rim * 0.15;
+        r = B[0] + (r - B[0]) * cov; g = B[1] + (g - B[1]) * cov; b = B[2] + (b - B[2]) * cov;
+      }
+      d[o] = r; d[o + 1] = g; d[o + 2] = b; d[o + 3] = 255;
+    }
+  }
+  c.putImageData(img, 0, 0);
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

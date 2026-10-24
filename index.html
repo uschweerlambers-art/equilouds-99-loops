@@ -1502,36 +1502,52 @@ function radarHUD(c, t, W, H, P) {
   c.globalAlpha = 1;
 }
 
-function cubeField(c, t, W, H, P) {
-  const TAU = Math.PI * 2;
-  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+function metaballs3d(c, t, W, H, P) {
+  const TAU = Math.PI * 2, ph = t % 1;
+  // Glänzende 3D-Metaballs. Aus dem Feld s wird eine Höhe h = r·sqrt(1 - 1/s): für eine einzelne Kugel
+  // ist das exakt eine Halbkugel, mehrere verschmelzen weich. Normale aus dem Gradienten, dann Phong-Licht.
+  const img = c.createImageData(W, H), d = img.data;
   const hx = s => [1, 3, 5].map(k => parseInt(s.slice(k, k + 2), 16));
-  const B = hx(P.bg), F = hx(P.fg);
-  const mix = k => 'rgb(' + B.map((b, i) => Math.round(b + (F[i] - b) * k)).join(',') + ')';
-  const V = []; for (let i = 0; i < 8; i++) V.push([i & 1 ? 1 : -1, i & 2 ? 1 : -1, i & 4 ? 1 : -1]);
-  const FACES = [[0, 1, 3, 2], [4, 5, 7, 6], [0, 1, 5, 4], [2, 3, 7, 6], [0, 2, 6, 4], [1, 3, 7, 5]];
-  const Lx = -0.45, Ly = -0.7, Lz = -0.55;
-  const g = H / 5, cols = Math.ceil(W / g) + 1;
-  for (let j = 0; j < 6; j++) for (let i = 0; i < cols; i++) {
-    const ay = TAU * t + (i + j) * 0.35, ax = 0.6 + 0.35 * Math.sin(TAU * t + i * 0.5 - j * 0.3);
-    const sz = g * 0.26 * (0.85 + 0.15 * Math.sin(TAU * (t * 2 - i * 0.1)));
-    const cx = (i + (j % 2 ? 0.5 : 0)) * g, cy = j * g * 0.88 - g * 0.2;
-    const pts = V.map(([x, y, z]) => {
-      const X = x * Math.cos(ay) + z * Math.sin(ay), Z0 = -x * Math.sin(ay) + z * Math.cos(ay);
-      return [X, y * Math.cos(ax) - Z0 * Math.sin(ax), y * Math.sin(ax) + Z0 * Math.cos(ax)];
-    });
-    const fs = FACES.map(f => {
-      const p = f.map(k => pts[k]);
-      let n = [0, 1, 2].map(k => (p[0][k] + p[2][k]) / 2);
-      const l = Math.hypot(n[0], n[1], n[2]); n = n.map(v => v / l);
-      return { p, n, z: (p[0][2] + p[2][2]) / 2 };
-    }).filter(f => f.n[2] < 0).sort((a, b) => b.z - a.z);
-    fs.forEach(f => {
-      const lit = Math.max(0, f.n[0] * Lx + f.n[1] * Ly + f.n[2] * Lz);
-      c.beginPath(); f.p.forEach(q => c.lineTo(cx + q[0] * sz, cy + q[1] * sz)); c.closePath();
-      c.fillStyle = (i * 3 + j * 5) % 11 === 0 && lit > 0.6 ? P.accent : mix(0.12 + 0.88 * lit); c.fill();
-    });
+  const B = hx(P.bg), F = hx(P.fg), A = hx(P.accent);
+  const cl = x => x < 0 ? 0 : x > 1 ? 1 : x;
+  const n = 5, bx = [], by = [], br = [];
+  for (let k = 0; k < n; k++) {
+    const fx = 1 + (k % 2), fy = 1 + ((k + 1) % 3 === 0 ? 2 : 1);
+    bx.push(W / 2 + H * 0.55 * Math.sin(TAU * (ph * fx + k * 0.21)));
+    by.push(H / 2 + H * 0.3 * Math.cos(TAU * (ph * fy + k * 0.37)));
+    br.push(Math.pow(H * (0.075 + 0.025 * (k % 3)), 2));
   }
+  const R0 = H * 0.1;
+  const L = [-0.45, -0.55, 0.7], Ll = Math.hypot(L[0], L[1], L[2]); L[0] /= Ll; L[1] /= Ll; L[2] /= Ll;
+  const Hv = [L[0], L[1], L[2] + 1], Hl = Math.hypot(Hv[0], Hv[1], Hv[2]); Hv[0] /= Hl; Hv[1] /= Hl; Hv[2] /= Hl;
+  const S = 4;
+  for (let y0 = 0; y0 < H; y0 += S) for (let x0 = 0; x0 < W; x0 += S) {
+    // Block ganz im Hintergrund? Dann flach füllen.
+    const qx = x0 + S / 2, qy = y0 + S / 2;
+    let s0 = 0, g0x = 0, g0y = 0;
+    for (let k = 0; k < n; k++) { const dx = qx - bx[k], dy = qy - by[k], q = dx * dx + dy * dy + 1, v = br[k] / q; s0 += v; const f = 2 * v / q; g0x -= f * dx; g0y -= f * dy; }
+    const far = (1 - s0) / (Math.hypot(g0x, g0y) + 1e-9) > S * 1.5;
+    for (let y = y0; y < Math.min(H, y0 + S); y++) for (let x = x0; x < Math.min(W, x0 + S); x++) {
+      const o = (y * W + x) * 4;
+      if (far) { d[o] = B[0]; d[o + 1] = B[1]; d[o + 2] = B[2]; d[o + 3] = 255; continue; }
+      let s = 0, gx = 0, gy = 0;
+      for (let k = 0; k < n; k++) { const dx = x - bx[k], dy = y - by[k], q = dx * dx + dy * dy + 1, v = br[k] / q; s += v; const f = 2 * v / q; gx -= f * dx; gy -= f * dy; }
+      const cov = cl(0.5 + (s - 1) / (Math.hypot(gx, gy) + 1e-9));
+      let r = B[0], g = B[1], b = B[2];
+      if (cov > 0) {
+        const u = Math.max(1e-4, 1 - 1 / s), k2 = R0 / (2 * Math.sqrt(u) * s * s);
+        let nx = -gx * k2, ny = -gy * k2, nz = 1; const nl = Math.hypot(nx, ny, nz); nx /= nl; ny /= nl; nz /= nl;
+        const diff = Math.max(0, nx * L[0] + ny * L[1] + nz * L[2]);
+        const spec = Math.pow(Math.max(0, nx * Hv[0] + ny * Hv[1] + nz * Hv[2]), 60);
+        const rim = Math.pow(1 - nz, 3) * 0.5;
+        const sh = 0.18 + 0.82 * diff;
+        r = A[0] * sh + (F[0] - A[0] * sh) * spec + F[0] * rim * 0.15; g = A[1] * sh + (F[1] - A[1] * sh) * spec + F[1] * rim * 0.15; b = A[2] * sh + (F[2] - A[2] * sh) * spec + F[2] * rim * 0.15;
+        r = B[0] + (r - B[0]) * cov; g = B[1] + (g - B[1]) * cov; b = B[2] + (b - B[2]) * cov;
+      }
+      d[o] = r; d[o + 1] = g; d[o + 2] = b; d[o + 3] = 255;
+    }
+  }
+  c.putImageData(img, 0, 0);
 }
 
 function reutersvardCubes(c, t, W, H, P) {
@@ -2149,7 +2165,7 @@ const BG_ROWS = [
   [kelpStrands, 'Kelp Strands', 'organic', 'A', 'Seetang wiegt sich in der Strömung, Luftblasen steigen auf.', 'Kelp swaying in the current while bubbles rise.'],
   [circuitBoard, 'Circuit Board', 'tech', 'A', 'Leiterbahnen mit Signalimpulsen in drei Geschwindigkeiten.', 'Circuit traces carrying signal pulses at three speeds.'],
   [radarHUD, 'Radar HUD', 'tech circle', 'A', 'Ein Radarschirm mit Sweep und aufleuchtenden Zielen.', 'A radar screen with a sweep and targets lighting up.'],
-  [cubeField, 'Cube Field', 'cube', 'A', 'Ein Feld aus massiven Würfeln mit Flat-Shading, jeder dreht in seinem eigenen Takt.', 'A field of solid flat-shaded cubes, each turning at its own pace.', 1],
+  [metaballs3d, 'Metaballs 3D', 'sphere organic', 'A', 'Fünf glänzende Kugeln, die sich treffen, zu einer Form verschmelzen und wieder lösen. Jeder Pixel wird mit Licht und Glanzpunkt berechnet.', 'Five glossy spheres that meet, melt into one shape and pull apart again. Every pixel is lit with diffuse light and a highlight.'],
   [reutersvardCubes, 'Cube Procession', 'cube triangle', 'A', 'Würfel ziehen im Kreis durch ein unmögliches Dreieck. Hommage an Oscar Reutersvärd, den Erfinder der unmöglichen Figuren.', 'Cubes march around an impossible triangle. A tribute to Oscar Reutersvärd, who invented impossible figures.'],
   [mengerSponge, 'Menger Sponge', 'cube fractal', 'A', 'Ein Menger-Schwamm der Stufe 2 aus 400 Würfeln mit echtem Flat-Shading. Die großen Tunnel leuchten innen orange.', 'A level-2 Menger sponge built from 400 cubes with real flat shading. The large tunnels glow orange inside.'],
 ];
@@ -2380,7 +2396,7 @@ const SECTIONS = [
   ['tech', ['Circuit Board', 'Chip Pulse', 'Signal Bars', 'Radial EQ', 'Radar HUD', 'Gear Pair', 'Loader Arcs', 'Infinity Trail']],
   ['grid', ['Hex Pulse', 'Grid Warp', 'Vector Field', 'Dot Magnet', 'Pixel Wave', 'Synth Horizon']],
   ['topo', ['Contour Drift', 'Ridge Lines', 'Topo Map', 'Terrain Mesh', 'Contour Island']],
-  ['solid', ['Noise Cube', 'Cube Field', 'Iso Cubes', 'Wire Cube', 'Globe Network', 'Pyramid Spin', 'Cube Procession', 'Diamond Gem', 'Menger Sponge']],
+  ['solid', ['Noise Cube', 'Metaballs 3D', 'Iso Cubes', 'Wire Cube', 'Globe Network', 'Pyramid Spin', 'Cube Procession', 'Diamond Gem', 'Menger Sponge']],
   ['square', ['Square Tunnel', 'Square Whirl', 'Op-Art Warp', 'Tangram', 'Slide Puzzle']],
   ['triangle', ['Low Poly Drift', 'Triangle Flip', 'Kaleidoscope', 'Chevron March', 'Hex Assemble']],
   ['fractal', ['Sierpinski Zoom', 'Koch Morph', 'Hexaflake', 'Julia Drift', 'Fractal Tree', 'Spirograph']],

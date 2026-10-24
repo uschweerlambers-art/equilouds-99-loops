@@ -76,7 +76,7 @@ Buttons are pure CSS. Colors run through `--bg`, `--fg` and `--accent`; size sca
 | # | Name | Type | Description |
 |---|---|---|---|
 | 27 | [Noise Cube](loops/27-noise-cube.html) | Canvas | A cube made of 6 × 6 × 6 small cubes. A noise field makes them shrink, vanish and reappear. Set N = 12 for 1728 cubes. |
-| 28 | [Cube Field](loops/28-cube-field.html) | Canvas | A field of solid flat-shaded cubes, each turning at its own pace. |
+| 28 | [Metaballs 3D](loops/28-metaballs-3d.html) | Canvas | Five glossy spheres that meet, melt into one shape and pull apart again. Every pixel is lit with diffuse light and a highlight. |
 | 29 | [Iso Cubes](loops/29-iso-cubes.html) | Canvas | Isometric columns growing to the beat of a wave. A small city made of data. |
 | 30 | [Wire Cube](loops/30-wire-cube.html) | Canvas | Two wireframe cubes in true 3D projection; the inner one spins twice as fast the other way. |
 | 31 | [Globe Network](loops/31-globe-network.html) | Canvas | A globe made of 2261 dots. Connection arcs grow between cities and fade away again; the orange lines start in Bielefeld. |
