@@ -1718,23 +1718,46 @@ function kochMorph(c, t, W, H, P) {
   flake(H * 0.14, -TAU * t / 3 * 2, 3, 1 - k, P.fg, false);
 }
 
-function slideSquares(c, t, W, H, P) {
+function slidePuzzle(c, t, W, H, P) {
+  const TAU = Math.PI * 2, ph = t % 1;
+  const hx = s => [1, 3, 5].map(k => parseInt(s.slice(k, k + 2), 16));
+  const B = hx(P.bg), F = hx(P.fg);
+  const mix = k => 'rgb(' + B.map((b, i) => Math.round(b + (F[i] - b) * k)).join(',') + ')';
   c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
-  const s = H * 0.15, gap = s * 0.16, cells = [[0, 0], [1, 0], [1, 1], [0, 1]];
-  const u = t * 12, step = Math.floor(u), f = u - step;
-  const ease = f < 0.6 ? (1 - Math.cos(Math.PI * f / 0.6)) / 2 : 1;
-  const pos = [0, 1, 2]; let empty = 3;
-  for (let i = 0; i < step; i++) { const from = (empty + 3) % 4; pos[pos.indexOf(from)] = empty; empty = from; }
-  const mover = pos.indexOf((empty + 3) % 4);
-  const ox = W / 2 - s - gap / 2, oy = H / 2 - s - gap / 2;
-  c.strokeStyle = P.fg; c.globalAlpha = 0.2; c.lineWidth = Math.max(1, H / 600);
-  c.strokeRect(ox - gap, oy - gap, s * 2 + gap * 3, s * 2 + gap * 3); c.globalAlpha = 1;
-  pos.forEach((cell, k) => {
-    let [x, y] = cells[cell];
-    if (k === mover) { const [tx, ty] = cells[empty]; x += (tx - x) * ease; y += (ty - y) * ease; }
-    c.fillStyle = k === 0 ? P.accent : P.fg;
-    c.fillRect(ox + x * (s + gap), oy + y * (s + gap), s, s);
-  });
+  // 24 zufällige Züge durcheinander, danach dieselben 24 Züge zurück: nach 12 s ist das Puzzle wieder gelöst
+  const N = 4, STEPS = 24;
+  let MOVES;
+  {
+    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    let e = 15, last = -1; const moves = [];
+    for (let i = 0; i < STEPS; i++) {
+      const ex = e % N, ey = Math.floor(e / N), opts = [];
+      if (ex > 0) opts.push(e - 1); if (ex < N - 1) opts.push(e + 1); if (ey > 0) opts.push(e - N); if (ey < N - 1) opts.push(e + N);
+      const ok = opts.filter(o => o !== last), nxt = ok[Math.floor(rnd() * ok.length)];
+      moves.push([nxt, e]); last = e; e = nxt;            // Kachel von nxt rutscht nach e
+    }
+    MOVES = moves.concat(moves.slice().reverse().map(([a, b]) => [b, a]));
+  }
+  const moves = MOVES, total = moves.length;
+  const u = ph * total, step = Math.floor(u), f = u - step;
+  const board = []; for (let i = 0; i < 15; i++) board.push(i); board.push(-1);
+  for (let i = 0; i < step; i++) { const [from, to] = moves[i]; board[to] = board[from]; board[from] = -1; }
+  const [mFrom, mTo] = moves[step];
+  const ease = f < 0.7 ? (1 - Math.cos(Math.PI * f / 0.7)) / 2 : 1;
+  const size = H * 0.78, cell = size / N, gap = cell * 0.07, x0 = (W - size) / 2, y0 = (H - size) / 2;
+  const rr = cell * 0.12;
+  c.fillStyle = mix(0.06); c.beginPath(); c.roundRect ? c.roundRect(x0 - gap, y0 - gap, size + gap, size + gap, rr * 1.5) : c.rect(x0 - gap, y0 - gap, size + gap, size + gap); c.fill();
+  c.font = '600 ' + Math.round(cell * 0.36) + 'px "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace';
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  for (let i = 0; i < 16; i++) {
+    const id = board[i]; if (id < 0) continue;
+    let gx = i % N, gy = Math.floor(i / N), moving = false;
+    if (i === mFrom) { gx += ((mTo % N) - gx) * ease; gy += (Math.floor(mTo / N) - gy) * ease; moving = true; }
+    const x = x0 + gx * cell, y = y0 + gy * cell, home = id === i && !moving;
+    c.fillStyle = moving ? P.accent : home ? P.fg : mix(0.62);
+    c.beginPath(); c.roundRect ? c.roundRect(x, y, cell - gap, cell - gap, rr) : c.rect(x, y, cell - gap, cell - gap); c.fill();
+    c.fillStyle = P.bg; c.fillText(String(id + 1), x + (cell - gap) / 2, y + (cell - gap) / 2 + cell * 0.02);
+  }
 }
 
 function dnaHelix(c, t, W, H, P) {
@@ -1921,37 +1944,87 @@ function diamondGem(c, t, W, H, P) {
   if (k > 0) { const s = H * 0.06 * k, x = W / 2 + sz * 0.45, y = H * 0.46 + bob - sz * 0.5; c.strokeStyle = P.accent; c.lineWidth = H / 300; c.beginPath(); c.moveTo(x - s, y); c.lineTo(x + s, y); c.moveTo(x, y - s); c.lineTo(x, y + s); c.stroke(); }
 }
 
-function sphereMesh(c, t, W, H, P) {
-  const TAU = Math.PI * 2;
-  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
-  const R = H * 0.34, ay = TAU * t, ax = 0.45;
-  const pr = (x, y, z) => {
-    const X = x * Math.cos(ay) + z * Math.sin(ay), Z0 = -x * Math.sin(ay) + z * Math.cos(ay);
-    const Y = y * Math.cos(ax) - Z0 * Math.sin(ax), Z = y * Math.sin(ax) + Z0 * Math.cos(ax);
-    return [W / 2 + X * R, H / 2 + Y * R, Z];
-  };
-  c.lineWidth = Math.max(1, H / 600);
-  const line = (pts, col, wgt) => {
-    for (let k = 0; k < pts.length - 1; k++) {
-      const a = pts[k], b = pts[k + 1], z = (a[2] + b[2]) / 2;
-      c.strokeStyle = col; c.globalAlpha = z < 0 ? 0.9 : 0.15; c.lineWidth = Math.max(1, H / 600) * wgt;
-      c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke();
+function globeNet(c, t, W, H, P) {
+  const TAU = Math.PI * 2, ph = t % 1, D = Math.PI / 180;
+  const hx = s => [1, 3, 5].map(k => parseInt(s.slice(k, k + 2), 16));
+  const B = hx(P.bg), F = hx(P.fg), A = hx(P.accent);
+  const mix = (X, k) => 'rgb(' + B.map((b, i) => Math.round(b + (X[i] - b) * k)).join(',') + ')';
+  // Landmaske 120 x 60 (3°-Raster), 1 Bit pro Zelle, Base64
+  const LAND = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH4P+AAAAAAAAAAAAAAAD9P//ABYAAAYAAAAAAABa8f/+AAAACACwAAAAAAcrMB/+AAAAgH/dBAAAYABy/g/wAAAADf///+Ax////64/gAB/z/f/////I////6weBgDv///////+B///+DAMAAPf//////9cAIP/+DoAACLf/////+BgAgH//j8AACGf/////4DAAAB//7+AAFv///////CAAAAf//wAAB////////AAAAAf//wAAB/9f////8AAAAAf//gAAF38f////5AAAAAf/+AAAHB7////9gAAAAAf/+AAAHCX////8iAAAAAP/8AAAD4A////8MAAAAAH/4AAAH+Z////8QAAAAAB8IAAAP//9///+AAAAAAA8AAAAf//+P//8AAAAAAAYEAAAf//fx//wAAAAAAAcggAAf//Pg8egAAAAAAAHgAAAf//vA4fCAAAAAAAAwAAA///8AYHAAAAAAAAARwAAf//+AYBAAAAAAAAAD8AAP//+AAABAAAAAAAAD/gAEP/8AAIMAAAAAAAAD/gAAH/4AAG4AAAAAAAAH/4AAH/wAACaoAAAAAAAH/+AAD/gAACCHAAAAAAAH//AAD/gAAAwDgAAAAAAD//AAB/wAAAAAAAIAAAAB/+AAD/yAAAAZAAAAAAAA/+AAD/mAAAB/AAAAAAAAf+AAD/EAAAD/gAAAAAAAf8AAB/MAAAP/wAAAAAAA/wAAB+AAAAP/4AAAAAAA/wAAB+AAAAP/4AAAAAAA/gAAA8AAAAH/4AAAAAAA/AAAAgAAAAEDwAAAAAAB+AAAAAAAAAABwCAAAAAB4AAAAAAAAAAAACAAAAAAwAAAAAAAAAAAAEAAAAABwAAAAAAAAAAAAIAAAAABgAAAAAAAAAAAAAAAAAABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+  {
+    const bin = atob(LAND), bits = [];
+    for (let i = 0; i < bin.length; i++) for (let b = 7; b >= 0; b--) bits.push((bin.charCodeAt(i) >> b) & 1);
+    const dots = [];
+    for (let la = -58; la <= 84; la += 2.2) {
+      const step = 2.2 / Math.max(0.2, Math.cos(la * D));
+      for (let lo = -180; lo < 180; lo += step) {
+        const r = Math.min(59, Math.floor((90 - la) / 3)), cc = Math.min(119, Math.floor((lo + 180) / 3));
+        if (bits[r * 120 + cc]) dots.push([la * D, lo * D]);
+      }
     }
+    var DOTS = dots;
+  }
+  const CITY = { bie: [52, 8.5], nyc: [40.7, -74], la: [34, -118], mex: [19.4, -99], bog: [4.7, -74], sao: [-23.5, -46.6], bue: [-34.6, -58.4], lon: [51.5, 0], lag: [6.5, 3.4], cai: [30, 31], nai: [-1.3, 36.8], jnb: [-26, 28], dxb: [25, 55], bom: [19, 72.8], sin: [1.3, 103.8], sha: [31, 121], tok: [35.7, 139.7], syd: [-33.9, 151], mos: [55.7, 37.6], tor: [43.7, -79] };
+  const LINKS = [['bie', 'nyc'], ['bie', 'sha'], ['bie', 'sao'], ['bie', 'dxb'], ['bie', 'jnb'], ['bie', 'tok'], ['nyc', 'lon'], ['la', 'tok'], ['mex', 'mos'], ['bog', 'cai'], ['bue', 'lag'], ['nai', 'bom'], ['sin', 'syd'], ['tor', 'la'], ['dxb', 'sin'], ['sao', 'jnb']];
+  const yaw = -TAU * ph + 0.3, tilt = 0.38;
+  const R = H * 0.4, cx = W / 2, cy = H / 2;
+  const vec = (la, lo) => [Math.cos(la) * Math.sin(lo), Math.sin(la), Math.cos(la) * Math.cos(lo)];
+  const view = v => {
+    const x = v[0] * Math.cos(yaw) + v[2] * Math.sin(yaw), z0 = -v[0] * Math.sin(yaw) + v[2] * Math.cos(yaw);
+    return [x, v[1] * Math.cos(tilt) - z0 * Math.sin(tilt), v[1] * Math.sin(tilt) + z0 * Math.cos(tilt)];
   };
-  for (let i = 1; i < 12; i++) {
-    const phi = Math.PI * i / 12 - Math.PI / 2, y = Math.sin(phi), r = Math.cos(phi), pts = [];
-    for (let k = 0; k <= 48; k++) { const a = TAU * k / 48; pts.push(pr(Math.cos(a) * r, y, Math.sin(a) * r)); }
-    line(pts, i === 6 ? P.accent : P.fg, i === 6 ? 2.5 : 1);
+  const scr = p => [cx + p[0] * R, cy - p[1] * R];
+  const hidden = p => p[2] < 0 && p[0] * p[0] + p[1] * p[1] < 1;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  // Kugel
+  const g = c.createRadialGradient(cx - R * 0.3, cy - R * 0.35, R * 0.1, cx, cy, R);
+  g.addColorStop(0, mix(F, 0.13)); g.addColorStop(1, mix(F, 0.04));
+  c.fillStyle = g; c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.fill();
+  // Kontinente als Punkte
+  const ds = Math.max(0.8, R * 0.0125);
+  for (const [la, lo] of DOTS) {
+    const p = view(vec(la, lo));
+    if (p[2] <= 0.02) continue;
+    c.fillStyle = mix(F, 0.18 + 0.5 * p[2]);
+    const q = scr(p); c.beginPath(); c.arc(q[0], q[1], ds * (0.55 + 0.45 * p[2]), 0, TAU); c.fill();
   }
-  for (let j = 0; j < 16; j++) {
-    const a = TAU * j / 16, pts = [];
-    for (let k = 0; k <= 24; k++) { const phi = Math.PI * k / 24 - Math.PI / 2; pts.push(pr(Math.cos(a) * Math.cos(phi), Math.sin(phi), Math.sin(a) * Math.cos(phi))); }
-    line(pts, P.fg, 1);
-  }
-  const oa = -TAU * t * 2, o = [Math.cos(oa) * 1.35, Math.sin(oa) * 0.25, Math.sin(oa) * 1.35];
-  const p = pr(o[0], o[1], o[2]);
-  c.globalAlpha = p[2] < 0 ? 1 : 0.3; c.fillStyle = P.accent; c.beginPath(); c.arc(p[0], p[1], H / 45, 0, TAU); c.fill();
-  c.globalAlpha = 1;
+  c.strokeStyle = mix(F, 0.22); c.lineWidth = Math.max(1, H / 500); c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.stroke();
+  // Verbindungen: Großkreisbögen, die wachsen, kurz stehen und wieder verschwinden
+  const slerp = (a, b, s) => { const w = Math.acos(Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2])), sw = Math.sin(w) || 1; const k1 = Math.sin((1 - s) * w) / sw, k2 = Math.sin(s * w) / sw; return [a[0] * k1 + b[0] * k2, a[1] * k1 + b[1] * k2, a[2] * k1 + b[2] * k2]; };
+  const nodes = new Set();
+  LINKS.forEach(([ka, kb], i) => {
+    const u = ((ph * 2 + i / LINKS.length) % 1);                    // jede Verbindung zweimal pro Loop
+    const grow = Math.min(1, u / 0.35), shrink = u > 0.7 ? (u - 0.7) / 0.3 : 0;
+    const s0 = shrink, s1 = grow;
+    if (s1 <= s0) return;
+    const a = vec(CITY[ka][0] * D, CITY[ka][1] * D), b = vec(CITY[kb][0] * D, CITY[kb][1] * D);
+    const dist = Math.acos(Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2]));
+    const lift = 0.08 + 0.26 * dist / Math.PI;
+    const N = 48; let prev = null;
+    c.lineCap = 'round';
+    for (let k = 0; k <= N; k++) {
+      const s = s0 + (s1 - s0) * k / N, v = slerp(a, b, s), h = 1 + lift * Math.sin(Math.PI * s);
+      const p = view([v[0] * h, v[1] * h, v[2] * h]);
+      if (prev && !hidden(p) && !hidden(prev)) {
+        const q0 = scr(prev), q1 = scr(p);
+        c.strokeStyle = ka === 'bie' ? P.accent : mix(F, 0.85); c.globalAlpha = 0.35 + 0.65 * Math.min(1, (p[2] + 1));
+        c.lineWidth = Math.max(1, H / 340); c.beginPath(); c.moveTo(q0[0], q0[1]); c.lineTo(q1[0], q1[1]); c.stroke();
+      }
+      prev = p;
+    }
+    c.globalAlpha = 1;
+    if (s0 === 0) nodes.add(ka);
+    if (s1 >= 1) nodes.add(kb);
+    if (s1 < 1 && s1 > s0) { const v = slerp(a, b, s1), h = 1 + lift * Math.sin(Math.PI * s1), p = view([v[0] * h, v[1] * h, v[2] * h]); if (!hidden(p)) { const q = scr(p); c.fillStyle = P.accent; c.beginPath(); c.arc(q[0], q[1], H / 150, 0, TAU); c.fill(); } }
+  });
+  nodes.add('bie');
+  nodes.forEach(k => {
+    const p = view(vec(CITY[k][0] * D, CITY[k][1] * D));
+    if (p[2] < 0.05) return;
+    const q = scr(p), r = H / (k === 'bie' ? 90 : 140);
+    c.fillStyle = k === 'bie' ? P.accent : P.fg; c.beginPath(); c.arc(q[0], q[1], r, 0, TAU); c.fill();
+    c.strokeStyle = k === 'bie' ? P.accent : P.fg; c.lineWidth = Math.max(1, H / 600); c.beginPath(); c.arc(q[0], q[1], r * 2, 0, TAU); c.stroke();
+  });
 }
 
 function noiseCube(c, t, W, H, P) {
@@ -2080,7 +2153,7 @@ const SHAPE_ROWS = [
   [plexusHex, 'Plexus Hex', 'plexus', 'A', 'Ein Plexus-Netz, gefangen in einem Hexagon. Equiloud als Datenstruktur.', 'A plexus network caught inside a hexagon. Equiloud as a data structure.'],
   [terminalType, 'Terminal Type', 'code', 'A', 'Ein Terminal tippt einen Render-Befehl. Für Entwickler-Content und Tutorials.', 'A terminal typing a render command. For developer content and tutorials.'],
   [kochMorph, 'Koch Morph', 'fractal triangle', 'A', 'Ein Dreieck wächst zur Koch-Schneeflocke und wieder zurück.', 'A triangle growing into a Koch snowflake and back.'],
-  [slideSquares, 'Slide Squares', 'square', 'W', 'Drei Quadrate rücken wie in einem Schiebepuzzle reihum.', 'Three squares shuffling around like a sliding puzzle.'],
+  [slidePuzzle, 'Slide Puzzle', 'square', 'A', 'Das klassische 15er-Schiebepuzzle auf 4 × 4. 24 Züge mischen es, dieselben 24 Züge rückwärts lösen es wieder. Kacheln am richtigen Platz leuchten weiß.', 'The classic 15-puzzle on 4 × 4. 24 moves shuffle it, the same 24 moves in reverse solve it again. Tiles in the right place glow white.'],
   [dnaHelix, 'DNA Helix', 'organic', 'A', 'Eine Doppelhelix, die sich mit echter Tiefensortierung dreht.', 'A double helix turning with true depth sorting.'],
   [cellDivision, 'Cell Division', 'organic', 'A', 'Eine Zelle teilt sich in vier und findet wieder zusammen.', 'A cell dividing into four and coming back together.'],
   [chipPulse, 'Chip Pulse', 'tech', 'A', 'Ein Mikrochip schickt Signale über 24 Leiterbahnen nach außen.', 'A microchip sending signals out along 24 traces.'],
@@ -2088,7 +2161,7 @@ const SHAPE_ROWS = [
   [pyramidSpin, 'Pyramid Spin', 'pyramid', 'A', 'Eine massive Pyramide mit Flat-Shading, die über ihrem Schatten schwebt.', 'A solid flat-shaded pyramid floating above its shadow.'],
   [diamondGem, 'Diamond Gem', 'diamond', 'A', 'Ein facettierter Diamant mit 25 Flächen. Die hellste Facette blitzt in Orange auf.', 'A faceted diamond with 25 faces. The brightest facet flashes orange.', 1],
   [noiseCube, 'Noise Cube', 'cube', 'A', 'Ein Würfel aus 6 × 6 × 6 kleinen Würfeln. Ein Rauschfeld lässt sie schrumpfen, verschwinden und wieder auftauchen. Mit N = 12 sind es 1728 Würfel.', 'A cube made of 6 × 6 × 6 small cubes. A noise field makes them shrink, vanish and reappear. Set N = 12 for 1728 cubes.'],
-  [sphereMesh, 'Sphere Mesh', 'sphere', 'A', 'Ein Gitterglobus mit Äquator in Orange und einem kreisenden Satelliten.', 'A wireframe globe with an orange equator and an orbiting satellite.']
+  [globeNet, 'Globe Network', 'sphere space tech', 'A', 'Eine Erdkugel aus 2261 Punkten. Zwischen Städten wachsen Verbindungsbögen und verschwinden wieder, die orangen Linien starten in Bielefeld.', 'A globe made of 2261 dots. Connection arcs grow between cities and fade away again; the orange lines start in Bielefeld.'],
 ];
 
 const BTN_ROWS = [
@@ -2283,8 +2356,8 @@ const SECTIONS = [
   ['tech', ['Circuit Board', 'Chip Pulse', 'Signal Bars', 'Radial EQ', 'Radar HUD', 'Gear Pair', 'Loader Arcs', 'Infinity Trail']],
   ['grid', ['Hex Pulse', 'Grid Warp', 'Vector Field', 'Dot Magnet', 'Pixel Wave', 'Synth Horizon']],
   ['topo', ['Contour Drift', 'Ridge Lines', 'Topo Map', 'Terrain Mesh', 'Contour Island']],
-  ['solid', ['Noise Cube', 'Cube Field', 'Iso Cubes', 'Wire Cube', 'Sphere Mesh', 'Pyramid Spin', 'Pyramid Field', 'Diamond Gem', 'Diamond Lattice']],
-  ['square', ['Square Tunnel', 'Square Whirl', 'Op-Art Warp', 'Tangram', 'Slide Squares']],
+  ['solid', ['Noise Cube', 'Cube Field', 'Iso Cubes', 'Wire Cube', 'Globe Network', 'Pyramid Spin', 'Pyramid Field', 'Diamond Gem', 'Diamond Lattice']],
+  ['square', ['Square Tunnel', 'Square Whirl', 'Op-Art Warp', 'Tangram', 'Slide Puzzle']],
   ['triangle', ['Low Poly Drift', 'Triangle Flip', 'Kaleidoscope', 'Chevron March', 'Hex Assemble']],
   ['fractal', ['Sierpinski Zoom', 'Koch Morph', 'Hexaflake', 'Julia Drift', 'Fractal Tree', 'Spirograph']],
   ['circle', ['Halftone Swell', 'Circle Pack', 'Moiré Rings', 'Hex to Circle', 'Truchet Flip', 'Check Draw', 'Pendulum Wave', 'Bounce Row', 'Newton’s Cradle']],

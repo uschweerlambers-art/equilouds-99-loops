@@ -79,7 +79,7 @@ Buttons are pure CSS. Colors run through `--bg`, `--fg` and `--accent`; size sca
 | 28 | [Cube Field](loops/28-cube-field.html) | Canvas | A field of solid flat-shaded cubes, each turning at its own pace. |
 | 29 | [Iso Cubes](loops/29-iso-cubes.html) | Canvas | Isometric columns growing to the beat of a wave. A small city made of data. |
 | 30 | [Wire Cube](loops/30-wire-cube.html) | Canvas | Two wireframe cubes in true 3D projection; the inner one spins twice as fast the other way. |
-| 31 | [Sphere Mesh](loops/31-sphere-mesh.html) | Canvas | A wireframe globe with an orange equator and an orbiting satellite. |
+| 31 | [Globe Network](loops/31-globe-network.html) | Canvas | A globe made of 2261 dots. Connection arcs grow between cities and fade away again; the orange lines start in Bielefeld. |
 | 32 | [Pyramid Spin](loops/32-pyramid-spin.html) | Canvas | A solid flat-shaded pyramid floating above its shadow. |
 | 33 | [Pyramid Field](loops/33-pyramid-field.html) | Canvas | Pyramids from above, growing while the light travels once around them. |
 | 34 | [Diamond Gem](loops/34-diamond-gem.html) | Canvas | A faceted diamond with 25 faces. The brightest facet flashes orange. |
@@ -93,7 +93,7 @@ Buttons are pure CSS. Colors run through `--bg`, `--fg` and `--accent`; size sca
 | 37 | [Square Whirl](loops/37-square-whirl.html) | Canvas | 40 nested, twisted squares form a whirl. |
 | 38 | [Op-Art Warp](loops/38-op-art-warp.html) | Canvas | A checkerboard inflated by a lens from the center. Op art after Vasarely. |
 | 39 | [Tangram](loops/39-tangram.html) | Canvas | The seven classic tangram pieces switch between square, triangle and parallelogram. While rebuilding they briefly fly apart and spin. |
-| 40 | [Slide Squares](loops/40-slide-squares.html) | Canvas | Three squares shuffling around like a sliding puzzle. |
+| 40 | [Slide Puzzle](loops/40-slide-puzzle.html) | Canvas | The classic 15-puzzle on 4 × 4. 24 moves shuffle it, the same 24 moves in reverse solve it again. Tiles in the right place glow white. |
 
 ### Triangles (5)
 

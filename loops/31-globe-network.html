@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Globe Network · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Globe Network (31) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2, ph = t % 1, D = Math.PI / 180;
+  const hx = s => [1, 3, 5].map(k => parseInt(s.slice(k, k + 2), 16));
+  const B = hx(P.bg), F = hx(P.fg), A = hx(P.accent);
+  const mix = (X, k) => 'rgb(' + B.map((b, i) => Math.round(b + (X[i] - b) * k)).join(',') + ')';
+  // Landmaske 120 x 60 (3°-Raster), 1 Bit pro Zelle, Base64
+  const LAND = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH4P+AAAAAAAAAAAAAAAD9P//ABYAAAYAAAAAAABa8f/+AAAACACwAAAAAAcrMB/+AAAAgH/dBAAAYABy/g/wAAAADf///+Ax////64/gAB/z/f/////I////6weBgDv///////+B///+DAMAAPf//////9cAIP/+DoAACLf/////+BgAgH//j8AACGf/////4DAAAB//7+AAFv///////CAAAAf//wAAB////////AAAAAf//wAAB/9f////8AAAAAf//gAAF38f////5AAAAAf/+AAAHB7////9gAAAAAf/+AAAHCX////8iAAAAAP/8AAAD4A////8MAAAAAH/4AAAH+Z////8QAAAAAB8IAAAP//9///+AAAAAAA8AAAAf//+P//8AAAAAAAYEAAAf//fx//wAAAAAAAcggAAf//Pg8egAAAAAAAHgAAAf//vA4fCAAAAAAAAwAAA///8AYHAAAAAAAAARwAAf//+AYBAAAAAAAAAD8AAP//+AAABAAAAAAAAD/gAEP/8AAIMAAAAAAAAD/gAAH/4AAG4AAAAAAAAH/4AAH/wAACaoAAAAAAAH/+AAD/gAACCHAAAAAAAH//AAD/gAAAwDgAAAAAAD//AAB/wAAAAAAAIAAAAB/+AAD/yAAAAZAAAAAAAA/+AAD/mAAAB/AAAAAAAAf+AAD/EAAAD/gAAAAAAAf8AAB/MAAAP/wAAAAAAA/wAAB+AAAAP/4AAAAAAA/wAAB+AAAAP/4AAAAAAA/gAAA8AAAAH/4AAAAAAA/AAAAgAAAAEDwAAAAAAB+AAAAAAAAAABwCAAAAAB4AAAAAAAAAAAACAAAAAAwAAAAAAAAAAAAEAAAAABwAAAAAAAAAAAAIAAAAABgAAAAAAAAAAAAAAAAAABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+  {
+    const bin = atob(LAND), bits = [];
+    for (let i = 0; i < bin.length; i++) for (let b = 7; b >= 0; b--) bits.push((bin.charCodeAt(i) >> b) & 1);
+    const dots = [];
+    for (let la = -58; la <= 84; la += 2.2) {
+      const step = 2.2 / Math.max(0.2, Math.cos(la * D));
+      for (let lo = -180; lo < 180; lo += step) {
+        const r = Math.min(59, Math.floor((90 - la) / 3)), cc = Math.min(119, Math.floor((lo + 180) / 3));
+        if (bits[r * 120 + cc]) dots.push([la * D, lo * D]);
+      }
+    }
+    var DOTS = dots;
+  }
+  const CITY = { bie: [52, 8.5], nyc: [40.7, -74], la: [34, -118], mex: [19.4, -99], bog: [4.7, -74], sao: [-23.5, -46.6], bue: [-34.6, -58.4], lon: [51.5, 0], lag: [6.5, 3.4], cai: [30, 31], nai: [-1.3, 36.8], jnb: [-26, 28], dxb: [25, 55], bom: [19, 72.8], sin: [1.3, 103.8], sha: [31, 121], tok: [35.7, 139.7], syd: [-33.9, 151], mos: [55.7, 37.6], tor: [43.7, -79] };
+  const LINKS = [['bie', 'nyc'], ['bie', 'sha'], ['bie', 'sao'], ['bie', 'dxb'], ['bie', 'jnb'], ['bie', 'tok'], ['nyc', 'lon'], ['la', 'tok'], ['mex', 'mos'], ['bog', 'cai'], ['bue', 'lag'], ['nai', 'bom'], ['sin', 'syd'], ['tor', 'la'], ['dxb', 'sin'], ['sao', 'jnb']];
+  const yaw = -TAU * ph + 0.3, tilt = 0.38;
+  const R = H * 0.4, cx = W / 2, cy = H / 2;
+  const vec = (la, lo) => [Math.cos(la) * Math.sin(lo), Math.sin(la), Math.cos(la) * Math.cos(lo)];
+  const view = v => {
+    const x = v[0] * Math.cos(yaw) + v[2] * Math.sin(yaw), z0 = -v[0] * Math.sin(yaw) + v[2] * Math.cos(yaw);
+    return [x, v[1] * Math.cos(tilt) - z0 * Math.sin(tilt), v[1] * Math.sin(tilt) + z0 * Math.cos(tilt)];
+  };
+  const scr = p => [cx + p[0] * R, cy - p[1] * R];
+  const hidden = p => p[2] < 0 && p[0] * p[0] + p[1] * p[1] < 1;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  // Kugel
+  const g = c.createRadialGradient(cx - R * 0.3, cy - R * 0.35, R * 0.1, cx, cy, R);
+  g.addColorStop(0, mix(F, 0.13)); g.addColorStop(1, mix(F, 0.04));
+  c.fillStyle = g; c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.fill();
+  // Kontinente als Punkte
+  const ds = Math.max(0.8, R * 0.0125);
+  for (const [la, lo] of DOTS) {
+    const p = view(vec(la, lo));
+    if (p[2] <= 0.02) continue;
+    c.fillStyle = mix(F, 0.18 + 0.5 * p[2]);
+    const q = scr(p); c.beginPath(); c.arc(q[0], q[1], ds * (0.55 + 0.45 * p[2]), 0, TAU); c.fill();
+  }
+  c.strokeStyle = mix(F, 0.22); c.lineWidth = Math.max(1, H / 500); c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.stroke();
+  // Verbindungen: Großkreisbögen, die wachsen, kurz stehen und wieder verschwinden
+  const slerp = (a, b, s) => { const w = Math.acos(Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2])), sw = Math.sin(w) || 1; const k1 = Math.sin((1 - s) * w) / sw, k2 = Math.sin(s * w) / sw; return [a[0] * k1 + b[0] * k2, a[1] * k1 + b[1] * k2, a[2] * k1 + b[2] * k2]; };
+  const nodes = new Set();
+  LINKS.forEach(([ka, kb], i) => {
+    const u = ((ph * 2 + i / LINKS.length) % 1);                    // jede Verbindung zweimal pro Loop
+    const grow = Math.min(1, u / 0.35), shrink = u > 0.7 ? (u - 0.7) / 0.3 : 0;
+    const s0 = shrink, s1 = grow;
+    if (s1 <= s0) return;
+    const a = vec(CITY[ka][0] * D, CITY[ka][1] * D), b = vec(CITY[kb][0] * D, CITY[kb][1] * D);
+    const dist = Math.acos(Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2]));
+    const lift = 0.08 + 0.26 * dist / Math.PI;
+    const N = 48; let prev = null;
+    c.lineCap = 'round';
+    for (let k = 0; k <= N; k++) {
+      const s = s0 + (s1 - s0) * k / N, v = slerp(a, b, s), h = 1 + lift * Math.sin(Math.PI * s);
+      const p = view([v[0] * h, v[1] * h, v[2] * h]);
+      if (prev && !hidden(p) && !hidden(prev)) {
+        const q0 = scr(prev), q1 = scr(p);
+        c.strokeStyle = ka === 'bie' ? P.accent : mix(F, 0.85); c.globalAlpha = 0.35 + 0.65 * Math.min(1, (p[2] + 1));
+        c.lineWidth = Math.max(1, H / 340); c.beginPath(); c.moveTo(q0[0], q0[1]); c.lineTo(q1[0], q1[1]); c.stroke();
+      }
+      prev = p;
+    }
+    c.globalAlpha = 1;
+    if (s0 === 0) nodes.add(ka);
+    if (s1 >= 1) nodes.add(kb);
+    if (s1 < 1 && s1 > s0) { const v = slerp(a, b, s1), h = 1 + lift * Math.sin(Math.PI * s1), p = view([v[0] * h, v[1] * h, v[2] * h]); if (!hidden(p)) { const q = scr(p); c.fillStyle = P.accent; c.beginPath(); c.arc(q[0], q[1], H / 150, 0, TAU); c.fill(); } }
+  });
+  nodes.add('bie');
+  nodes.forEach(k => {
+    const p = view(vec(CITY[k][0] * D, CITY[k][1] * D));
+    if (p[2] < 0.05) return;
+    const q = scr(p), r = H / (k === 'bie' ? 90 : 140);
+    c.fillStyle = k === 'bie' ? P.accent : P.fg; c.beginPath(); c.arc(q[0], q[1], r, 0, TAU); c.fill();
+    c.strokeStyle = k === 'bie' ? P.accent : P.fg; c.lineWidth = Math.max(1, H / 600); c.beginPath(); c.arc(q[0], q[1], r * 2, 0, TAU); c.stroke();
+  });
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
