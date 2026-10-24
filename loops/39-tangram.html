@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tangram · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Tangram (39) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2, ph = t % 1;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const hx = s => [1, 3, 5].map(k => parseInt(s.slice(k, k + 2), 16));
+  const B = hx(P.bg), F = hx(P.fg);
+  const tone = k => 'rgb(' + B.map((b, i) => Math.round(b + (F[i] - b) * k)).join(',') + ')';
+  // Die 7 Steine im 4x4-Quadrat. Gruppe 0: zwei große Dreiecke, Gruppe 1: die übrigen fünf Steine.
+  const PIECES = [
+    { g: 0, col: P.accent, pts: [[0, 0], [4, 0], [2, 2]] },
+    { g: 0, col: tone(0.92), pts: [[0, 0], [2, 2], [0, 4]] },
+    { g: 1, col: tone(0.55), pts: [[4, 2], [4, 4], [2, 4]] },
+    { g: 1, col: tone(0.78), pts: [[2, 2], [3, 1], [4, 2], [3, 3]] },
+    { g: 1, col: P.accent, pts: [[3, 1], [4, 0], [4, 2]] },
+    { g: 1, col: tone(0.4), pts: [[1, 3], [2, 2], [3, 3]] },
+    { g: 1, col: tone(0.66), pts: [[0, 4], [1, 3], [3, 3], [2, 4]] }
+  ];
+  // Figuren als Lage der beiden Gruppen: [Winkel, dx, dy] für Gruppe 0 und 1 (y nach unten)
+  const POSES = [
+    [[0, 0, 0], [0, 0, 0]],                       // Quadrat
+    [[Math.PI, 0, 4], [Math.PI / 2, 4, 0]],       // Dreieck (Berg)
+    [[Math.PI / 2, 0, 0], [Math.PI / 2, 4, 0]]    // Parallelogramm
+  ];
+  const tf = (p, [a, dx, dy]) => [p[0] * Math.cos(a) - p[1] * Math.sin(a) + dx, p[0] * Math.sin(a) + p[1] * Math.cos(a) + dy];
+  const centre = pose => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; PIECES.forEach(pc => pc.pts.forEach(p => { const q = tf(p, pose[pc.g]); x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); })); return [(x0 + x1) / 2, (y0 + y1) / 2]; };
+  const seg = Math.floor(ph * 3), f = ph * 3 - seg, from = POSES[seg], to = POSES[(seg + 1) % 3];
+  const hold = 0.3, m = f < hold ? 0 : (f - hold) / (1 - hold), e = m * m * (3 - 2 * m);
+  const cf = centre(from), ct = centre(to), s = H / 8.5;
+  PIECES.forEach((pc, i) => {
+    const pa = from[pc.g], pb = to[pc.g];
+    const pose = [pa[0] + (pb[0] - pa[0]) * e, pa[1] + (pb[1] - pa[1]) * e, pa[2] + (pb[2] - pa[2]) * e];
+    const ctr = [cf[0] + (ct[0] - cf[0]) * e, cf[1] + (ct[1] - cf[1]) * e];
+    const local = pc.pts.map(p => tf(p, pose)), gx = local.reduce((a, q) => a + q[0], 0) / local.length, gy = local.reduce((a, q) => a + q[1], 0) / local.length;
+    const burst = Math.sin(Math.PI * m), ox = (gx - ctr[0]) * 0.35 * burst, oy = (gy - ctr[1]) * 0.35 * burst;
+    const spin = (i % 2 ? 1 : -1) * TAU * e * (i % 3 === 0 ? 0 : 1);
+    c.beginPath();
+    local.forEach(q => {
+      const rx = q[0] - gx, ry = q[1] - gy, X = gx + rx * Math.cos(spin) - ry * Math.sin(spin) + ox, Y = gy + rx * Math.sin(spin) + ry * Math.cos(spin) + oy;
+      c.lineTo(W / 2 + (X - ctr[0]) * s, H / 2 + (Y - ctr[1]) * s);
+    });
+    c.closePath(); c.fillStyle = pc.col; c.fill();
+    c.strokeStyle = P.bg; c.lineWidth = Math.max(1, H / 220); c.lineJoin = 'round'; c.stroke();
+  });
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

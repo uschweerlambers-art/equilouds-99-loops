@@ -92,7 +92,7 @@ Buttons are pure CSS. Colors run through `--bg`, `--fg` and `--accent`; size sca
 | 36 | [Square Tunnel](loops/36-square-tunnel.html) | Canvas | Squares fly out of the depth toward the camera and twist open. Great as an intro behind a logo. |
 | 37 | [Square Whirl](loops/37-square-whirl.html) | Canvas | 40 nested, twisted squares form a whirl. |
 | 38 | [Op-Art Warp](loops/38-op-art-warp.html) | Canvas | A checkerboard inflated by a lens from the center. Op art after Vasarely. |
-| 39 | [Bauhaus Tiles](loops/39-bauhaus-tiles.html) | Canvas | Quarter circles, half circles and triangles tipping over in quarter turns, one after another. |
+| 39 | [Tangram](loops/39-tangram.html) | Canvas | The seven classic tangram pieces switch between square, triangle and parallelogram. While rebuilding they briefly fly apart and spin. |
 | 40 | [Slide Squares](loops/40-slide-squares.html) | Canvas | Three squares shuffling around like a sliding puzzle. |
 
 ### Triangles (5)

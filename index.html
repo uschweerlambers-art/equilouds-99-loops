@@ -461,23 +461,48 @@ function starWarp(c, t, W, H, P) {
   c.globalAlpha = 1;
 }
 
-function bauhausTiles(c, t, W, H, P) {
+function tangram(c, t, W, H, P) {
+  const TAU = Math.PI * 2, ph = t % 1;
   c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
-  const s = H / 4, cols = Math.ceil(W / s);
-  for (let j = 0; j < 4; j++) for (let i = 0; i < cols; i++) {
-    const h = Math.sin(i * 127.1 + j * 311.7) * 43758.5453, r = h - Math.floor(h);
-    const u = t * 4 + r, ph = u % 1;
-    const e = ph < 0.3 ? 0.5 - 0.5 * Math.cos(Math.PI * ph / 0.3) : 1;
-    c.save(); c.translate(i * s + s / 2, j * s + s / 2); c.rotate((Math.floor(u) + e) * Math.PI / 2);
-    c.fillStyle = (i + j * 2) % 5 === 0 ? P.accent : P.fg;
+  const hx = s => [1, 3, 5].map(k => parseInt(s.slice(k, k + 2), 16));
+  const B = hx(P.bg), F = hx(P.fg);
+  const tone = k => 'rgb(' + B.map((b, i) => Math.round(b + (F[i] - b) * k)).join(',') + ')';
+  // Die 7 Steine im 4x4-Quadrat. Gruppe 0: zwei große Dreiecke, Gruppe 1: die übrigen fünf Steine.
+  const PIECES = [
+    { g: 0, col: P.accent, pts: [[0, 0], [4, 0], [2, 2]] },
+    { g: 0, col: tone(0.92), pts: [[0, 0], [2, 2], [0, 4]] },
+    { g: 1, col: tone(0.55), pts: [[4, 2], [4, 4], [2, 4]] },
+    { g: 1, col: tone(0.78), pts: [[2, 2], [3, 1], [4, 2], [3, 3]] },
+    { g: 1, col: P.accent, pts: [[3, 1], [4, 0], [4, 2]] },
+    { g: 1, col: tone(0.4), pts: [[1, 3], [2, 2], [3, 3]] },
+    { g: 1, col: tone(0.66), pts: [[0, 4], [1, 3], [3, 3], [2, 4]] }
+  ];
+  // Figuren als Lage der beiden Gruppen: [Winkel, dx, dy] für Gruppe 0 und 1 (y nach unten)
+  const POSES = [
+    [[0, 0, 0], [0, 0, 0]],                       // Quadrat
+    [[Math.PI, 0, 4], [Math.PI / 2, 4, 0]],       // Dreieck (Berg)
+    [[Math.PI / 2, 0, 0], [Math.PI / 2, 4, 0]]    // Parallelogramm
+  ];
+  const tf = (p, [a, dx, dy]) => [p[0] * Math.cos(a) - p[1] * Math.sin(a) + dx, p[0] * Math.sin(a) + p[1] * Math.cos(a) + dy];
+  const centre = pose => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; PIECES.forEach(pc => pc.pts.forEach(p => { const q = tf(p, pose[pc.g]); x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); })); return [(x0 + x1) / 2, (y0 + y1) / 2]; };
+  const seg = Math.floor(ph * 3), f = ph * 3 - seg, from = POSES[seg], to = POSES[(seg + 1) % 3];
+  const hold = 0.3, m = f < hold ? 0 : (f - hold) / (1 - hold), e = m * m * (3 - 2 * m);
+  const cf = centre(from), ct = centre(to), s = H / 8.5;
+  PIECES.forEach((pc, i) => {
+    const pa = from[pc.g], pb = to[pc.g];
+    const pose = [pa[0] + (pb[0] - pa[0]) * e, pa[1] + (pb[1] - pa[1]) * e, pa[2] + (pb[2] - pa[2]) * e];
+    const ctr = [cf[0] + (ct[0] - cf[0]) * e, cf[1] + (ct[1] - cf[1]) * e];
+    const local = pc.pts.map(p => tf(p, pose)), gx = local.reduce((a, q) => a + q[0], 0) / local.length, gy = local.reduce((a, q) => a + q[1], 0) / local.length;
+    const burst = Math.sin(Math.PI * m), ox = (gx - ctr[0]) * 0.35 * burst, oy = (gy - ctr[1]) * 0.35 * burst;
+    const spin = (i % 2 ? 1 : -1) * TAU * e * (i % 3 === 0 ? 0 : 1);
     c.beginPath();
-    const type = Math.floor(r * 4);
-    if (type === 0) { c.moveTo(-s / 2, -s / 2); c.arc(-s / 2, -s / 2, s, 0, Math.PI / 2); }
-    else if (type === 1) { c.arc(0, -s / 2, s / 2, 0, Math.PI); }
-    else if (type === 2) { c.moveTo(-s / 2, -s / 2); c.lineTo(s / 2, -s / 2); c.lineTo(-s / 2, s / 2); }
-    else { c.arc(s * 0.18, s * 0.18, s * 0.3, 0, Math.PI * 2); }
-    c.fill(); c.restore();
-  }
+    local.forEach(q => {
+      const rx = q[0] - gx, ry = q[1] - gy, X = gx + rx * Math.cos(spin) - ry * Math.sin(spin) + ox, Y = gy + rx * Math.sin(spin) + ry * Math.cos(spin) + oy;
+      c.lineTo(W / 2 + (X - ctr[0]) * s, H / 2 + (Y - ctr[1]) * s);
+    });
+    c.closePath(); c.fillStyle = pc.col; c.fill();
+    c.strokeStyle = P.bg; c.lineWidth = Math.max(1, H / 220); c.lineJoin = 'round'; c.stroke();
+  });
 }
 
 function signalBars(c, t, W, H, P) {
@@ -1995,7 +2020,7 @@ const BG_ROWS = [
   [isoCubes, 'Iso Cubes', 'cube', 'A', 'Isometrische Säulen, die im Takt einer Welle wachsen. Eine kleine Stadt aus Daten.', 'Isometric columns growing to the beat of a wave. A small city made of data.'],
   [moireRings, 'Moiré Rings', 'circle', 'W', 'Zwei Ringfelder kreisen gegeneinander. Das Interferenzmuster entsteht von selbst.', 'Two ring fields circling against each other. The interference pattern appears by itself.'],
   [starWarp, 'Star Warp', 'space', 'A', 'Sterne strecken sich zu Linien wie beim Sprung in den Hyperraum.', 'Stars stretch into lines like a jump into hyperspace.'],
-  [bauhausTiles, 'Bauhaus Tiles', 'square triangle circle', 'W', 'Viertelkreise, Halbkreise und Dreiecke, die nacheinander in Vierteldrehungen kippen.', 'Quarter circles, half circles and triangles tipping over in quarter turns, one after another.'],
+  [tangram, 'Tangram', 'square triangle', 'A', 'Die sieben klassischen Tangram-Steine wechseln zwischen Quadrat, Dreieck und Parallelogramm. Beim Umbau fliegen sie kurz auseinander und drehen sich.', 'The seven classic tangram pieces switch between square, triangle and parallelogram. While rebuilding they briefly fly apart and spin.'],
   [signalBars, 'Signal Bars', 'tech', 'A', 'Ein gespiegelter LED-Equalizer. Passt zu Musik, Podcasts und Audio-Brands.', 'A mirrored LED equalizer. Fits music, podcasts and audio brands.'],
   [lowPolyDrift, 'Low Poly Drift', 'triangle', 'A', 'Ein Dreiecksnetz mit echter Lichtberechnung pro Fläche. Die Polymesh-Optik von Equiloud in 2D.', 'A triangle mesh with real per-face lighting. Equiloud’s polymesh look in 2D.', 1],
   [meshGradient, 'Mesh Gradient', 'organic', 'A', 'Weiche Farbfelder, die ineinander fließen. Der ruhigste Hintergrund der Sammlung.', 'Soft color fields flowing into each other. The calmest background in the collection.'],
@@ -2259,7 +2284,7 @@ const SECTIONS = [
   ['grid', ['Hex Pulse', 'Grid Warp', 'Vector Field', 'Dot Magnet', 'Pixel Wave', 'Synth Horizon']],
   ['topo', ['Contour Drift', 'Ridge Lines', 'Topo Map', 'Terrain Mesh', 'Contour Island']],
   ['solid', ['Noise Cube', 'Cube Field', 'Iso Cubes', 'Wire Cube', 'Sphere Mesh', 'Pyramid Spin', 'Pyramid Field', 'Diamond Gem', 'Diamond Lattice']],
-  ['square', ['Square Tunnel', 'Square Whirl', 'Op-Art Warp', 'Bauhaus Tiles', 'Slide Squares']],
+  ['square', ['Square Tunnel', 'Square Whirl', 'Op-Art Warp', 'Tangram', 'Slide Squares']],
   ['triangle', ['Low Poly Drift', 'Triangle Flip', 'Kaleidoscope', 'Chevron March', 'Hex Assemble']],
   ['fractal', ['Sierpinski Zoom', 'Koch Morph', 'Hexaflake', 'Julia Drift', 'Fractal Tree', 'Spirograph']],
   ['circle', ['Halftone Swell', 'Circle Pack', 'Moiré Rings', 'Hex to Circle', 'Truchet Flip', 'Check Draw', 'Pendulum Wave', 'Bounce Row', 'Newton’s Cradle']],
