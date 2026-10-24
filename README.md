@@ -123,7 +123,7 @@ Buttons are pure CSS. Colors run through `--bg`, `--fg` and `--accent`; size sca
 | 52 | [Halftone Swell](loops/52-halftone-swell.html) | Canvas | Halftone dots whose size follows a wave. Like screen printing in motion. |
 | 53 | [Circle Pack](loops/53-circle-pack.html) | Canvas | Densely packed circles pulsing as a wave from the center. |
 | 54 | [Moiré Rings](loops/54-moir-rings.html) | Canvas | Two ring fields circling against each other. The interference pattern appears by itself. |
-| 55 | [Hex to Circle](loops/55-hex-to-circle.html) | Canvas | Six outlines switching between hexagon and circle, offset in time. A logo animation in raw form. |
+| 55 | [Orbit Study](loops/55-orbit-study.html) | Canvas | A central node with 22 satellites on fine lines. Each orbits once or twice per loop in either direction; the large ones glow orange. |
 | 56 | [Truchet Flip](loops/56-truchet-flip.html) | Canvas | Quarter-circle tiles flipping one after another. New paths keep appearing. |
 | 57 | [Check Draw](loops/57-check-draw.html) | Canvas | Circle draws, check follows, a short pop. The success state for forms. |
 | 58 | [Pendulum Wave](loops/58-pendulum-wave.html) | Canvas | 15 pendulums with 4 to 18 swings per loop. After 12 seconds they line up again. |
