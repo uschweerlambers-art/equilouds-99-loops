@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Light Corridor · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Light Corridor (25) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2, ph = t % 1;
+  const hx = s => [1, 3, 5].map(k => parseInt(s.slice(k, k + 2), 16));
+  const A = hx(P.accent), F = hx(P.fg);
+  const rgba = (X, a) => 'rgba(' + X.join(',') + ',' + a + ')';
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  // Ein Gang aus leuchtenden Rahmen. Pro Loop geht es genau K Rahmen nach vorn: nahtlos.
+  const K = 12, gap = 1.2, far = 30, travel = ph * K * gap;
+  const camX = 0.12 * Math.sin(TAU * ph), camY = -0.35 + 0.04 * Math.sin(TAU * ph * 2);
+  const fov = H * 0.55, hw = 1.5, hh = 1.1, fl = -1.0;
+  const proj = (x, y, z) => { const dz = z - travel; if (dz < 0.2) return null; return [W / 2 + (x - camX) / dz * fov, H * 0.46 - (y - camY) / dz * fov, dz]; };
+  const fade = dz => Math.max(0, Math.min(1, 1.1 - dz / far));
+  const glowLine = (pts, X, a, w) => {
+    const q = pts.map(p => proj(...p)); if (q.some(v => !v)) return;
+    const f = fade(Math.min(...q.map(v => v[2]))) * a; if (f <= 0.01) return;
+    c.beginPath(); q.forEach((v, i) => i ? c.lineTo(v[0], v[1]) : c.moveTo(v[0], v[1]));
+    c.strokeStyle = rgba(X, 0.12 * f); c.lineWidth = w * 6; c.stroke();     // Schein
+    c.strokeStyle = rgba(X, 0.3 * f); c.lineWidth = w * 2.4; c.stroke();
+    c.strokeStyle = rgba(X, f); c.lineWidth = w; c.stroke();                 // Kern
+  };
+  // Bodenspiegelung: dunkler Verlauf
+  const g = c.createRadialGradient(W / 2, H * 0.48, 0, W / 2, H * 0.48, H * 0.9); g.addColorStop(0, rgba(A, 0.12)); g.addColorStop(1, rgba(A, 0)); c.fillStyle = g; c.fillRect(0, 0, W, H);
+  c.globalCompositeOperation = 'lighter';
+  const lw = Math.max(1, H / 420);
+  const z0 = Math.floor(travel / gap) * gap;
+  for (let z = z0 + far; z >= z0; z -= gap) {
+    const idx = ((Math.round(z / gap) % K) + K) % K;
+    // Rahmen
+    glowLine([[-hw, fl, z], [-hw, hh, z], [hw, hh, z], [hw, fl, z]], A, 1, lw);
+    // Spiegelung im Boden
+    glowLine([[-hw, fl, z], [-hw, 2 * fl - hh, z]], A, 0.25, lw); glowLine([[hw, fl, z], [hw, 2 * fl - hh, z]], A, 0.25, lw);
+    // Bodenlinie
+    glowLine([[-hw, fl, z], [hw, fl, z]], A, 0.55, lw * 0.8);
+    // gestrichelte Lichtleisten an Decke und Boden
+    if (idx % 2 === 0) { glowLine([[-0.05, hh, z], [-0.05, hh, z + gap * 0.5]], F, 0.7, lw); glowLine([[hw + 0.35, fl, z], [hw + 0.35, fl, z + gap * 0.55]], A, 0.9, lw * 1.4); }
+    // seitliche Glasflächen hin und wieder
+    if (idx % 4 === 1) glowLine([[-hw - 1.1, fl + 0.1, z], [-hw - 1.1, hh + 0.3, z], [-hw - 1.1, hh + 0.3, z + gap * 2.5], [-hw - 1.1, fl + 0.1, z + gap * 2.5], [-hw - 1.1, fl + 0.1, z]], A, 0.35, lw * 0.8);
+  }
+  // Bodenkanten und Lichtschiene rechts
+  glowLine([[-hw, fl, travel + 0.3], [-hw, fl, travel + far]], A, 0.5, lw); glowLine([[hw, fl, travel + 0.3], [hw, fl, travel + far]], A, 0.5, lw);
+  glowLine([[hw + 0.35, fl, travel + 0.3], [hw + 0.35, fl, travel + far]], A, 0.25, lw);
+  c.globalCompositeOperation = 'source-over';
+  // Lichtpunkt am Ende des Gangs
+  const v = proj(0, (fl + hh) / 2 - 0.1, travel + far);
+  if (v) { const rg = c.createRadialGradient(v[0], v[1], 0, v[0], v[1], H * 0.08); rg.addColorStop(0, rgba(A, 0.8)); rg.addColorStop(1, rgba(A, 0)); c.fillStyle = rg; c.fillRect(v[0] - H * 0.1, v[1] - H * 0.1, H * 0.2, H * 0.2); }
+  // kleine Figur am Boden, die mitläuft
+  const fp = proj(-0.45 + camX * 0, fl, travel + 3.2) || [W * 0.4, H * 0.8], fx = fp[0], fy = fp[1], fh = H * 0.07;
+  c.fillStyle = rgba([10, 10, 12], 0.9); c.beginPath(); c.ellipse(fx, fy - fh * 0.88, fh * 0.11, fh * 0.12, 0, 0, TAU); c.fill();
+  c.beginPath(); c.moveTo(fx - fh * 0.15, fy - fh * 0.75); c.lineTo(fx + fh * 0.15, fy - fh * 0.75); c.lineTo(fx + fh * 0.1, fy); c.lineTo(fx - fh * 0.1, fy); c.closePath(); c.fill();
+  c.strokeStyle = rgba(A, 0.7); c.lineWidth = lw; c.beginPath(); c.moveTo(fx - fh * 0.5, fy + fh * 0.02); c.lineTo(fx + fh * 0.5, fy + fh * 0.02); c.lineTo(fx + fh * 0.7, fy + fh * 0.22); c.lineTo(fx - fh * 0.7, fy + fh * 0.22); c.closePath(); c.stroke();
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
