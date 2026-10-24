@@ -1559,31 +1559,48 @@ function reutersvardCubes(c, t, W, H, P) {
   });
 }
 
-function diamondLattice(c, t, W, H, P) {
-  const TAU = Math.PI * 2;
+function mengerSponge(c, t, W, H, P) {
+  const TAU = Math.PI * 2, ph = t % 1;
   c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
   const hx = s => [1, 3, 5].map(k => parseInt(s.slice(k, k + 2), 16));
-  const B = hx(P.bg), F = hx(P.fg);
-  const mix = k => 'rgb(' + B.map((b, i) => Math.round(b + (F[i] - b) * k)).join(',') + ')';
-  const w = H / 5, h = H / 3.2, la = -TAU * t;
-  const lx = Math.cos(la) * 0.7, ly = Math.sin(la) * 0.7, lz = 0.7;
-  for (let j = -1; j * h / 2 < H + h; j++) for (let i = -1; i * w < W + w; i++) {
-    const cx = i * w + (j % 2 ? w / 2 : 0), cy = j * h / 2;
-    const hgt = w * (0.2 + 0.5 * (0.5 + 0.5 * Math.sin(TAU * (t * 2 + cx / W * 0.8 + cy / H * 0.5))));
-    const V = [[cx, cy - h / 2], [cx + w / 2, cy], [cx, cy + h / 2], [cx - w / 2, cy]];
-    for (let k = 0; k < 4; k++) {
-      const a = V[k], b = V[(k + 1) % 4];
-      const mx = (a[0] + b[0]) / 2 - cx, my = (a[1] + b[1]) / 2 - cy, ml = Math.hypot(mx, my);
-      const len = Math.hypot(hgt, ml), n0 = mx / ml * hgt / len, n1 = my / ml * hgt / len, n2 = ml / len;
-      const lit = Math.max(0, n0 * lx + n1 * ly + n2 * lz);
-      c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.lineTo(cx, cy); c.closePath();
-      c.fillStyle = mix(0.08 + 0.9 * lit * lit); c.fill();
-    }
-    if (hgt > w * 0.6) { c.fillStyle = P.accent; c.beginPath(); c.arc(cx, cy, H / 160, 0, TAU); c.fill(); }
+  const B = hx(P.bg), F = hx(P.fg), A = hx(P.accent);
+  const mix = (X, k) => 'rgb(' + B.map((b, i) => Math.round(b + (X[i] - b) * k)).join(',') + ')';
+  // Menger-Schwamm Stufe 2: 9 x 9 x 9 Raster, 400 Würfel
+  const N = 9;
+  const hole = (x, y, z) => { for (let s = 1; s < N; s *= 3) { const a = Math.floor(x / s) % 3 === 1, b = Math.floor(y / s) % 3 === 1, d = Math.floor(z / s) % 3 === 1; if (a + b + d >= 2) return true; } return false; };
+  const bigHole = (x, y, z) => (Math.floor(x / 3) === 1) + (Math.floor(y / 3) === 1) + (Math.floor(z / 3) === 1) >= 2;
+  const solid = (x, y, z) => x >= 0 && y >= 0 && z >= 0 && x < N && y < N && z < N && !hole(x, y, z);
+  const ay = TAU * ph / 4 + 0.6, ax = 0.55 + 0.1 * Math.sin(TAU * ph);       // Vierteldrehung pro Loop = nahtlos (Würfelsymmetrie)
+  const rot = ([x, y, z]) => {
+    const X = x * Math.cos(ay) + z * Math.sin(ay), Z0 = -x * Math.sin(ay) + z * Math.cos(ay);
+    return [X, y * Math.cos(ax) - Z0 * Math.sin(ax), y * Math.sin(ax) + Z0 * Math.cos(ax)];
+  };
+  const DIRS = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+  const L = [-0.45, -0.7, -0.55];
+  const rn = DIRS.map(rot);
+  const lit = rn.map(n => Math.max(0, n[0] * L[0] + n[1] * L[1] + n[2] * L[2]));
+  const s = H * 0.05, h = N / 2, faces = [];
+  for (let x = 0; x < N; x++) for (let y = 0; y < N; y++) for (let z = 0; z < N; z++) {
+    if (!solid(x, y, z)) continue;
+    DIRS.forEach((d, k) => {
+      if (rn[k][2] >= 0) return;                              // Rückseite
+      const nx = x + d[0], ny = y + d[1], nz = z + d[2];
+      if (solid(nx, ny, nz)) return;                          // innen verdeckt
+      const ax2 = d.findIndex(v => v !== 0), o = [x - h, y - h, z - h], q = [], other = [0, 1, 2].filter(i => i !== ax2);
+      [[0, 0], [1, 0], [1, 1], [0, 1]].forEach(([a, b]) => { const p = o.slice(); p[ax2] += d[ax2] > 0 ? 1 : 0; p[other[0]] += a; p[other[1]] += b; q.push(rot(p)); });
+      const inside = nx >= 0 && ny >= 0 && nz >= 0 && nx < N && ny < N && nz < N;
+      faces.push({ q, z: (q[0][2] + q[1][2] + q[2][2] + q[3][2]) / 4, k, hot: inside && bigHole(nx, ny, nz) });
+    });
   }
+  faces.sort((a, b) => b.z - a.z);
+  const pr = p => { const f = 22 / (22 + p[2]); return [W / 2 + p[0] * s * f, H / 2 + p[1] * s * f]; };
+  c.lineJoin = 'round'; c.lineWidth = Math.max(0.5, H / 900);
+  faces.forEach(fc => {
+    c.beginPath(); fc.q.forEach(p => { const r = pr(p); c.lineTo(r[0], r[1]); }); c.closePath();
+    const col = fc.hot ? mix(A, 0.35 + 0.65 * lit[fc.k]) : mix(F, 0.1 + 0.85 * lit[fc.k]);
+    c.fillStyle = col; c.fill(); c.strokeStyle = col; c.stroke();
+  });
 }
-
-/* ---------- Neue Shapes ---------- */
 
 function planetRings(c, t, W, H, P) {
   const TAU = Math.PI * 2;
@@ -2133,7 +2150,7 @@ const BG_ROWS = [
   [radarHUD, 'Radar HUD', 'tech circle', 'A', 'Ein Radarschirm mit Sweep und aufleuchtenden Zielen.', 'A radar screen with a sweep and targets lighting up.'],
   [cubeField, 'Cube Field', 'cube', 'A', 'Ein Feld aus massiven Würfeln mit Flat-Shading, jeder dreht in seinem eigenen Takt.', 'A field of solid flat-shaded cubes, each turning at its own pace.', 1],
   [reutersvardCubes, 'Cube Procession', 'cube triangle', 'A', 'Würfel ziehen im Kreis durch ein unmögliches Dreieck. Hommage an Oscar Reutersvärd, den Erfinder der unmöglichen Figuren.', 'Cubes march around an impossible triangle. A tribute to Oscar Reutersvärd, who invented impossible figures.'],
-  [diamondLattice, 'Diamond Lattice', 'diamond', 'W', 'Ein Rautengitter aus facettierten Steinen mit wanderndem Licht.', 'A lattice of faceted diamond shapes with travelling light.']
+  [mengerSponge, 'Menger Sponge', 'cube fractal', 'A', 'Ein Menger-Schwamm der Stufe 2 aus 400 Würfeln mit echtem Flat-Shading. Die großen Tunnel leuchten innen orange.', 'A level-2 Menger sponge built from 400 cubes with real flat shading. The large tunnels glow orange inside.'],
 ];
 
 const SHAPE_ROWS = [
@@ -2362,7 +2379,7 @@ const SECTIONS = [
   ['tech', ['Circuit Board', 'Chip Pulse', 'Signal Bars', 'Radial EQ', 'Radar HUD', 'Gear Pair', 'Loader Arcs', 'Infinity Trail']],
   ['grid', ['Hex Pulse', 'Grid Warp', 'Vector Field', 'Dot Magnet', 'Pixel Wave', 'Synth Horizon']],
   ['topo', ['Contour Drift', 'Ridge Lines', 'Topo Map', 'Terrain Mesh', 'Contour Island']],
-  ['solid', ['Noise Cube', 'Cube Field', 'Iso Cubes', 'Wire Cube', 'Globe Network', 'Pyramid Spin', 'Cube Procession', 'Diamond Gem', 'Diamond Lattice']],
+  ['solid', ['Noise Cube', 'Cube Field', 'Iso Cubes', 'Wire Cube', 'Globe Network', 'Pyramid Spin', 'Cube Procession', 'Diamond Gem', 'Menger Sponge']],
   ['square', ['Square Tunnel', 'Square Whirl', 'Op-Art Warp', 'Tangram', 'Slide Puzzle']],
   ['triangle', ['Low Poly Drift', 'Triangle Flip', 'Kaleidoscope', 'Chevron March', 'Hex Assemble']],
   ['fractal', ['Sierpinski Zoom', 'Koch Morph', 'Hexaflake', 'Julia Drift', 'Fractal Tree', 'Spirograph']],

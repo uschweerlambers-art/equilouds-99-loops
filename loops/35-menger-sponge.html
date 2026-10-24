@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Menger Sponge · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Menger Sponge (35) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2, ph = t % 1;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  const hx = s => [1, 3, 5].map(k => parseInt(s.slice(k, k + 2), 16));
+  const B = hx(P.bg), F = hx(P.fg), A = hx(P.accent);
+  const mix = (X, k) => 'rgb(' + B.map((b, i) => Math.round(b + (X[i] - b) * k)).join(',') + ')';
+  // Menger-Schwamm Stufe 2: 9 x 9 x 9 Raster, 400 Würfel
+  const N = 9;
+  const hole = (x, y, z) => { for (let s = 1; s < N; s *= 3) { const a = Math.floor(x / s) % 3 === 1, b = Math.floor(y / s) % 3 === 1, d = Math.floor(z / s) % 3 === 1; if (a + b + d >= 2) return true; } return false; };
+  const bigHole = (x, y, z) => (Math.floor(x / 3) === 1) + (Math.floor(y / 3) === 1) + (Math.floor(z / 3) === 1) >= 2;
+  const solid = (x, y, z) => x >= 0 && y >= 0 && z >= 0 && x < N && y < N && z < N && !hole(x, y, z);
+  const ay = TAU * ph / 4 + 0.6, ax = 0.55 + 0.1 * Math.sin(TAU * ph);       // Vierteldrehung pro Loop = nahtlos (Würfelsymmetrie)
+  const rot = ([x, y, z]) => {
+    const X = x * Math.cos(ay) + z * Math.sin(ay), Z0 = -x * Math.sin(ay) + z * Math.cos(ay);
+    return [X, y * Math.cos(ax) - Z0 * Math.sin(ax), y * Math.sin(ax) + Z0 * Math.cos(ax)];
+  };
+  const DIRS = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+  const L = [-0.45, -0.7, -0.55];
+  const rn = DIRS.map(rot);
+  const lit = rn.map(n => Math.max(0, n[0] * L[0] + n[1] * L[1] + n[2] * L[2]));
+  const s = H * 0.05, h = N / 2, faces = [];
+  for (let x = 0; x < N; x++) for (let y = 0; y < N; y++) for (let z = 0; z < N; z++) {
+    if (!solid(x, y, z)) continue;
+    DIRS.forEach((d, k) => {
+      if (rn[k][2] >= 0) return;                              // Rückseite
+      const nx = x + d[0], ny = y + d[1], nz = z + d[2];
+      if (solid(nx, ny, nz)) return;                          // innen verdeckt
+      const ax2 = d.findIndex(v => v !== 0), o = [x - h, y - h, z - h], q = [], other = [0, 1, 2].filter(i => i !== ax2);
+      [[0, 0], [1, 0], [1, 1], [0, 1]].forEach(([a, b]) => { const p = o.slice(); p[ax2] += d[ax2] > 0 ? 1 : 0; p[other[0]] += a; p[other[1]] += b; q.push(rot(p)); });
+      const inside = nx >= 0 && ny >= 0 && nz >= 0 && nx < N && ny < N && nz < N;
+      faces.push({ q, z: (q[0][2] + q[1][2] + q[2][2] + q[3][2]) / 4, k, hot: inside && bigHole(nx, ny, nz) });
+    });
+  }
+  faces.sort((a, b) => b.z - a.z);
+  const pr = p => { const f = 22 / (22 + p[2]); return [W / 2 + p[0] * s * f, H / 2 + p[1] * s * f]; };
+  c.lineJoin = 'round'; c.lineWidth = Math.max(0.5, H / 900);
+  faces.forEach(fc => {
+    c.beginPath(); fc.q.forEach(p => { const r = pr(p); c.lineTo(r[0], r[1]); }); c.closePath();
+    const col = fc.hot ? mix(A, 0.35 + 0.65 * lit[fc.k]) : mix(F, 0.1 + 0.85 * lit[fc.k]);
+    c.fillStyle = col; c.fill(); c.strokeStyle = col; c.stroke();
+  });
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

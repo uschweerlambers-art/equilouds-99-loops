@@ -83,7 +83,7 @@ Buttons are pure CSS. Colors run through `--bg`, `--fg` and `--accent`; size sca
 | 32 | [Pyramid Spin](loops/32-pyramid-spin.html) | Canvas | A solid flat-shaded pyramid floating above its shadow. |
 | 33 | [Cube Procession](loops/33-cube-procession.html) | Canvas | Cubes march around an impossible triangle. A tribute to Oscar Reutersvärd, who invented impossible figures. |
 | 34 | [Diamond Gem](loops/34-diamond-gem.html) | Canvas | A faceted diamond with 25 faces. The brightest facet flashes orange. |
-| 35 | [Diamond Lattice](loops/35-diamond-lattice.html) | Canvas | A lattice of faceted diamond shapes with travelling light. |
+| 35 | [Menger Sponge](loops/35-menger-sponge.html) | Canvas | A level-2 Menger sponge built from 400 cubes with real flat shading. The large tunnels glow orange inside. |
 
 ### Squares (5)
 
