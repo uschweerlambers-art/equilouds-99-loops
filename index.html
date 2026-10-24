@@ -1340,23 +1340,33 @@ function squareWhirl(c, t, W, H, P) {
   c.restore();
 }
 
-function triangleFlip(c, t, W, H, P) {
-  const TAU = Math.PI * 2;
+function triangleHalftone(c, t, W, H, P) {
+  const TAU = Math.PI * 2, ph = t % 1;
   c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
-  const s = H / 6, h = s * Math.sqrt(3) / 2, q = 0.92;
+  // Dreiecksraster als Halbton: jedes Dreieck wird von einem wandernden Feld vergrößert oder verkleinert.
+  const s = H / 7.5, h = s * Math.sqrt(3) / 2;
+  const blobs = [
+    [0.62 + 0.18 * Math.cos(TAU * ph), 0.38 + 0.16 * Math.sin(TAU * ph), 0.42],
+    [0.3 + 0.15 * Math.sin(TAU * ph * 2 + 1), 0.75 + 0.12 * Math.cos(TAU * ph), 0.3],
+    [0.85 + 0.1 * Math.sin(TAU * ph + 2), 0.85 + 0.1 * Math.cos(TAU * ph * 2), 0.22]
+  ];
+  const field = (x, y) => {
+    const u = x / W, v = y / H, asp = W / H;
+    let f = 0;
+    for (const [bx, by, r] of blobs) { const dx = (u - bx) * asp, dy = v - by; f += Math.exp(-(dx * dx + dy * dy) / (r * r)); }
+    return Math.min(1, f);
+  };
+  c.fillStyle = P.fg;
   for (let j = -1; j * h < H + h; j++) for (let i = -2; i * s / 2 < W + s; i++) {
     const up = (i + j) % 2 === 0;
     const cx = i * s / 2, cy = j * h + (up ? h * 2 / 3 : h / 3);
-    const k = Math.cos(TAU * ((cx / W) * 1.2 + (cy / H) * 0.6 - t * 2));
-    c.save(); c.translate(cx, cy); c.scale(q, k * q);
+    const k = field(cx, cy);
+    if (k < 0.04) continue;
+    const sc = 0.1 + 0.7 * k, R = h * 2 / 3 * sc;
     c.beginPath();
-    if (up) { c.moveTo(0, -h * 2 / 3); c.lineTo(s / 2, h / 3); c.lineTo(-s / 2, h / 3); }
-    else { c.moveTo(0, h * 2 / 3); c.lineTo(s / 2, -h / 3); c.lineTo(-s / 2, -h / 3); }
-    c.closePath();
-    c.fillStyle = k < 0 ? P.accent : P.fg; c.globalAlpha = 0.2 + 0.8 * Math.abs(k);
-    c.fill(); c.restore();
+    for (let q = 0; q < 3; q++) { const a = (up ? -Math.PI / 2 : Math.PI / 2) + TAU * q / 3; c.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); }
+    c.closePath(); c.fill();
   }
-  c.globalAlpha = 1;
 }
 
 function kaleidoscope(c, t, W, H, P) {
@@ -2225,7 +2235,7 @@ const BG_ROWS = [
   [topoMap, 'Topo Map', 'topo', 'W', 'Echte Höhenlinien per Marching Squares aus einer bewegten Landschaft. Jede fünfte Linie ist hervorgehoben wie auf einer Karte.', 'Real contour lines via marching squares from a moving landscape. Every fifth line is emphasized, like on a map.', 1],
   [slicedTopo, 'Sliced Topo', 'topo', 'O', 'Ein quadratischer Geländeblock aus 22 weißen Scheiben auf orangem Grund. Gipfel wachsen und sinken, ein flaches Tal zieht diagonal hindurch.', 'A square block of terrain made of 22 white slices on orange. Peaks rise and sink while a flat valley sweeps diagonally through.'],
   [squareWhirl, 'Square Whirl', 'square', 'W', '40 ineinander gedrehte Quadrate bilden einen Wirbel.', '40 nested, twisted squares form a whirl.'],
-  [triangleFlip, 'Triangle Flip', 'triangle', 'A', 'Ein Dreiecksraster, dessen Flächen in einer Welle umklappen.', 'A triangle grid whose faces flip over in a wave.'],
+  [triangleHalftone, 'Triangle Halftone', 'triangle', 'W', 'Ein Raster aus schwarzen Dreiecken als Halbton. Drei wandernde Felder lassen die Dreiecke wachsen und schrumpfen, sodass dunkle Wolken über die Fläche ziehen.', 'A grid of black triangles as a halftone. Three wandering fields make the triangles grow and shrink, so dark clouds drift across the surface.'],
   [kaleidoscope, 'Kaleidoscope', 'triangle', 'A', 'Zwölffach gespiegelte Dreiecke wie im Kaleidoskop.', 'Triangles mirrored twelve times, like in a kaleidoscope.'],
   [circlePack, 'Circle Pack', 'circle', 'W', 'Dicht gepackte Kreise, die als Welle von der Mitte aus pulsieren.', 'Densely packed circles pulsing as a wave from the center.'],
   [metaballs, 'Metaballs', 'organic', 'A', 'Sieben weiche Tropfen, die verschmelzen und sich wieder trennen.', 'Seven soft drops merging and separating again.'],
@@ -2465,7 +2475,7 @@ const SECTIONS = [
   ['topo', ['Contour Drift', 'Ridge Lines', 'Topo Map', 'Sliced Topo', 'Contour Island 3D']],
   ['solid', ['Noise Cube', 'Metaballs 3D', 'Iso Cubes', 'Wire Cube', 'Globe Network', 'Pyramid Spin', 'Cube Procession', 'Diamond Gem', 'Menger Sponge']],
   ['square', ['Square Tunnel', 'Square Whirl', 'Op-Art Warp', 'Tangram', 'Slide Puzzle']],
-  ['triangle', ['Low Poly Drift', 'Triangle Flip', 'Kaleidoscope', 'Chevron March', 'Hex Assemble']],
+  ['triangle', ['Low Poly Drift', 'Triangle Halftone', 'Kaleidoscope', 'Chevron March', 'Hex Assemble']],
   ['fractal', ['Sierpinski Zoom', 'Koch Morph', 'Hexaflake', 'Julia Drift', 'Fractal Tree', 'Spirograph']],
   ['circle', ['Halftone Swell', 'Circle Pack', 'Moiré Rings', 'Orbit Study', 'Truchet Flip', 'Check Draw', 'Pendulum Wave', 'Bounce Row', 'Newton’s Cradle']],
   ['organic', ['Mesh Gradient', 'Aurora Bands', 'Silk Strings', 'Wind Lines', 'Rain Lines', 'Kelp Strands', 'Ripple Pond', 'Metaballs', 'Blob Morph', 'Cell Division', 'DNA Helix']],

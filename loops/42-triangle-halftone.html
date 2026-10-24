@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Triangle Halftone · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #fbfbfb; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Triangle Halftone (42) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#fbfbfb', fg: '#151419', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2, ph = t % 1;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  // Dreiecksraster als Halbton: jedes Dreieck wird von einem wandernden Feld vergrößert oder verkleinert.
+  const s = H / 7.5, h = s * Math.sqrt(3) / 2;
+  const blobs = [
+    [0.62 + 0.18 * Math.cos(TAU * ph), 0.38 + 0.16 * Math.sin(TAU * ph), 0.42],
+    [0.3 + 0.15 * Math.sin(TAU * ph * 2 + 1), 0.75 + 0.12 * Math.cos(TAU * ph), 0.3],
+    [0.85 + 0.1 * Math.sin(TAU * ph + 2), 0.85 + 0.1 * Math.cos(TAU * ph * 2), 0.22]
+  ];
+  const field = (x, y) => {
+    const u = x / W, v = y / H, asp = W / H;
+    let f = 0;
+    for (const [bx, by, r] of blobs) { const dx = (u - bx) * asp, dy = v - by; f += Math.exp(-(dx * dx + dy * dy) / (r * r)); }
+    return Math.min(1, f);
+  };
+  c.fillStyle = P.fg;
+  for (let j = -1; j * h < H + h; j++) for (let i = -2; i * s / 2 < W + s; i++) {
+    const up = (i + j) % 2 === 0;
+    const cx = i * s / 2, cy = j * h + (up ? h * 2 / 3 : h / 3);
+    const k = field(cx, cy);
+    if (k < 0.04) continue;
+    const sc = 0.1 + 0.7 * k, R = h * 2 / 3 * sc;
+    c.beginPath();
+    for (let q = 0; q < 3; q++) { const a = (up ? -Math.PI / 2 : Math.PI / 2) + TAU * q / 3; c.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); }
+    c.closePath(); c.fill();
+  }
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

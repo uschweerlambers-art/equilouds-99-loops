@@ -100,7 +100,7 @@ Buttons are pure CSS. Colors run through `--bg`, `--fg` and `--accent`; size sca
 | # | Name | Type | Description |
 |---|---|---|---|
 | 41 | [Low Poly Drift](loops/41-low-poly-drift.html) | Canvas | A triangle mesh with real per-face lighting. Equiloud’s polymesh look in 2D. |
-| 42 | [Triangle Flip](loops/42-triangle-flip.html) | Canvas | A triangle grid whose faces flip over in a wave. |
+| 42 | [Triangle Halftone](loops/42-triangle-halftone.html) | Canvas | A grid of black triangles as a halftone. Three wandering fields make the triangles grow and shrink, so dark clouds drift across the surface. |
 | 43 | [Kaleidoscope](loops/43-kaleidoscope.html) | Canvas | Triangles mirrored twelve times, like in a kaleidoscope. |
 | 44 | [Chevron March](loops/44-chevron-march.html) | Canvas | Zigzag bands marching steadily downward. Loud, graphic, good for social clips. |
 | 45 | [Hex Assemble](loops/45-hex-assemble.html) | Canvas | Six triangles fly in, form a hexagon, turn and fly out again. An Equiloud logo reveal. |
