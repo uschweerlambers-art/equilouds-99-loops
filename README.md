@@ -81,7 +81,7 @@ Buttons are pure CSS. Colors run through `--bg`, `--fg` and `--accent`; size sca
 | 30 | [Wire Cube](loops/30-wire-cube.html) | Canvas | Two wireframe cubes in true 3D projection; the inner one spins twice as fast the other way. |
 | 31 | [Globe Network](loops/31-globe-network.html) | Canvas | A globe made of 2261 dots. Connection arcs grow between cities and fade away again; the orange lines start in Bielefeld. |
 | 32 | [Pyramid Spin](loops/32-pyramid-spin.html) | Canvas | A solid flat-shaded pyramid floating above its shadow. |
-| 33 | [Pyramid Field](loops/33-pyramid-field.html) | Canvas | Pyramids from above, growing while the light travels once around them. |
+| 33 | [Cube Procession](loops/33-cube-procession.html) | Canvas | Cubes march around an impossible triangle. A tribute to Oscar Reutersvärd, who invented impossible figures. |
 | 34 | [Diamond Gem](loops/34-diamond-gem.html) | Canvas | A faceted diamond with 25 faces. The brightest facet flashes orange. |
 | 35 | [Diamond Lattice](loops/35-diamond-lattice.html) | Canvas | A lattice of faceted diamond shapes with travelling light. |
 
