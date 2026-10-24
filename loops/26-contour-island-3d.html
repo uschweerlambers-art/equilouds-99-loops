@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contour Island 3D · Equilouds 99 Loops</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #151419; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<canvas id="loop"></canvas>
+<script>
+// Contour Island 3D (26) · Equilouds 99 Loops
+// Uwe Schweer-Lambers / EQUILOUD · uweschweerlambers.de
+// License: MIT, free to use, commercial use included
+const W = 1920, H = 1080;   // output size in px
+const DUR = 12;             // seconds per loop, seamless
+const P = { bg: '#151419', fg: '#fbfbfb', accent: '#f56e0f' };
+
+function draw(c, t, W, H, P) {
+  const TAU = Math.PI * 2, ph = t % 1;
+  c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+  // Höhenfeld einer Insel mit mehreren Gipfeln, die langsam wachsen und schrumpfen
+  const n = 72, F = new Float32Array(n * n);
+  const peaks = [
+    [-0.15, -0.25, 0.28, 1.0 + 0.12 * Math.sin(TAU * ph)],
+    [-0.35, 0.2, 0.26, 0.8 + 0.15 * Math.sin(TAU * ph + 2)],
+    [0.35, -0.1, 0.3, 0.7 + 0.12 * Math.cos(TAU * ph)],
+    [0.4, 0.4, 0.2, 0.55 + 0.15 * Math.sin(TAU * ph * 2 + 1)]
+  ];
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const x = i / (n - 1) * 2 - 1, y = j / (n - 1) * 2 - 1;
+    let h = 0;
+    for (const [px, py, r, a] of peaks) h += a * Math.exp(-((x - px) ** 2 + (y - py) ** 2) / (r * r));
+    h += 0.05 * Math.sin(x * 9 + TAU * ph) * Math.cos(y * 7 - TAU * ph);
+    h *= Math.max(0, 1 - Math.pow(Math.max(Math.abs(x), Math.abs(y)), 6));
+    F[j * n + i] = h;
+  }
+  // Kamera: leicht schwenkend, schräg von oben, mit Perspektive
+  const yaw = 0.5 + 0.25 * Math.sin(TAU * ph), pitch = 1.0, zs = 0.55;
+  const proj = (x, y, z) => {
+    const X = x * Math.cos(yaw) - y * Math.sin(yaw), Y = x * Math.sin(yaw) + y * Math.cos(yaw);
+    const Yc = Y * Math.cos(pitch) - z * zs * Math.sin(pitch);
+    const f = 3.2 / (3.2 + Y * Math.sin(pitch) * 0.8);          // Perspektive: hinten kleiner
+    return [W / 2 + X * H * 0.62 * f, H * 0.56 + Yc * H * 0.62 * f];
+  };
+  const g = i => i / (n - 1) * 2 - 1;
+  const levels = 24, top = 1.15;
+  const MS = [[], [[3, 0]], [[0, 1]], [[3, 1]], [[1, 2]], [[3, 0], [1, 2]], [[0, 2]], [[3, 2]], [[2, 3]], [[0, 2]], [[0, 1], [2, 3]], [[1, 2]], [[1, 3]], [[0, 1]], [[3, 0]], []];
+  c.lineJoin = 'round'; c.lineCap = 'round';
+  for (let L = 0; L < levels; L++) {
+    const iso = 0.03 + L * (top / levels), major = L % 5 === 0;
+    // 1) Fläche oberhalb der Höhenlinie in Hintergrundfarbe füllen: verdeckt die Linien dahinter
+    c.beginPath();
+    for (let j = 0; j < n - 1; j++) {
+      let run = -1;
+      for (let i = 0; i <= n - 1; i++) {
+        const full = i < n - 1 && F[j * n + i] > iso && F[j * n + i + 1] > iso && F[(j + 1) * n + i] > iso && F[(j + 1) * n + i + 1] > iso;
+        if (full && run < 0) run = i;
+        if (!full && run >= 0) {
+          const p = [proj(g(run), g(j), iso), proj(g(i), g(j), iso), proj(g(i), g(j + 1), iso), proj(g(run), g(j + 1), iso)];
+          c.moveTo(p[0][0], p[0][1]); p.slice(1).forEach(q => c.lineTo(q[0], q[1])); c.closePath(); run = -1;
+        }
+        if (!full && i < n - 1) {
+          const v = [F[j * n + i], F[j * n + i + 1], F[(j + 1) * n + i + 1], F[(j + 1) * n + i]];
+          if (v.some(a => a > iso)) {
+            const cn = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]], poly = [];
+            for (let k = 0; k < 4; k++) {
+              const a = v[k], b = v[(k + 1) % 4];
+              if (a > iso) poly.push(cn[k]);
+              if ((a > iso) !== (b > iso)) { const s = (iso - a) / (b - a); poly.push([cn[k][0] + (cn[(k + 1) % 4][0] - cn[k][0]) * s, cn[k][1] + (cn[(k + 1) % 4][1] - cn[k][1]) * s]); }
+            }
+            poly.forEach((q, k) => { const r = proj(g(q[0]), g(q[1]), iso); k ? c.lineTo(r[0], r[1]) : c.moveTo(r[0], r[1]); }); c.closePath();
+          }
+        }
+      }
+    }
+    c.fillStyle = P.bg; c.fill();
+    // 2) Höhenlinie zeichnen
+    c.beginPath();
+    for (let j = 0; j < n - 1; j++) for (let i = 0; i < n - 1; i++) {
+      const a = F[j * n + i], b = F[j * n + i + 1], q = F[(j + 1) * n + i + 1], d = F[(j + 1) * n + i];
+      const code = (a > iso) | (b > iso) << 1 | (q > iso) << 2 | (d > iso) << 3;
+      if (code === 0 || code === 15) continue;
+      const e = [[i + (iso - a) / (b - a), j], [i + 1, j + (iso - b) / (q - b)], [i + (iso - d) / (q - d), j + 1], [i, j + (iso - a) / (d - a)]];
+      for (const [p, r] of MS[code]) { const A = proj(g(e[p][0]), g(e[p][1]), iso), Bq = proj(g(e[r][0]), g(e[r][1]), iso); c.moveTo(A[0], A[1]); c.lineTo(Bq[0], Bq[1]); }
+    }
+    c.strokeStyle = major ? P.accent : P.fg; c.globalAlpha = major ? 1 : 0.75;
+    c.lineWidth = Math.max(1, H / (major ? 380 : 620)); c.stroke(); c.globalAlpha = 1;
+  }
+}
+
+const cv = document.getElementById('loop');
+cv.width = W; cv.height = H;
+const c = cv.getContext('2d');
+function frame(ms) {
+  draw(c, (ms / 1000 / DUR) % 1, W, H, P);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -69,7 +69,7 @@ Buttons are pure CSS. Colors run through `--bg`, `--fg` and `--accent`; size sca
 | 23 | [Ridge Lines](loops/23-ridge-lines.html) | Canvas | Stacked lines like a mountain profile. Three overlaid waves keep the motion calm. |
 | 24 | [Topo Map](loops/24-topo-map.html) | Canvas | Real contour lines via marching squares from a moving landscape. Every fifth line is emphasized, like on a map. |
 | 25 | [Terrain Mesh](loops/25-terrain-mesh.html) | Canvas | A wireframe terrain the camera flies over endlessly. |
-| 26 | [Contour Island](loops/26-contour-island.html) | Canvas | Contour lines of an island whose coastline slowly shifts. |
+| 26 | [Contour Island 3D](loops/26-contour-island-3d.html) | Canvas | Contour lines of an island, stacked in 3D. Four peaks grow and shrink, the camera pans along, and hidden lines disappear behind the hills. |
 
 ### 3D solids (9)
 

@@ -1889,30 +1889,76 @@ function chipPulse(c, t, W, H, P) {
 }
 
 function contourIsland(c, t, W, H, P) {
-  const TAU = Math.PI * 2;
+  const TAU = Math.PI * 2, ph = t % 1;
   c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
-  const n = 64, S = H * 0.9, ox = (W - S) / 2, oy = (H - S) / 2, dd = S / (n - 1), F = new Float32Array(n * n);
+  // Höhenfeld einer Insel mit mehreren Gipfeln, die langsam wachsen und schrumpfen
+  const n = 72, F = new Float32Array(n * n);
+  const peaks = [
+    [-0.15, -0.25, 0.28, 1.0 + 0.12 * Math.sin(TAU * ph)],
+    [-0.35, 0.2, 0.26, 0.8 + 0.15 * Math.sin(TAU * ph + 2)],
+    [0.35, -0.1, 0.3, 0.7 + 0.12 * Math.cos(TAU * ph)],
+    [0.4, 0.4, 0.2, 0.55 + 0.15 * Math.sin(TAU * ph * 2 + 1)]
+  ];
   for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
-    const x = i / (n - 1) * 2 - 1, y = j / (n - 1) * 2 - 1, th = Math.atan2(y, x), r2 = x * x + y * y;
-    F[j * n + i] = Math.exp(-r2 * 2.2 * (1 + 0.22 * Math.sin(3 * th + TAU * t) + 0.12 * Math.sin(5 * th - TAU * t * 2))) + 0.25 * Math.exp(-((x - 0.35 * Math.cos(TAU * t)) ** 2 + (y + 0.3) ** 2) * 14);
+    const x = i / (n - 1) * 2 - 1, y = j / (n - 1) * 2 - 1;
+    let h = 0;
+    for (const [px, py, r, a] of peaks) h += a * Math.exp(-((x - px) ** 2 + (y - py) ** 2) / (r * r));
+    h += 0.05 * Math.sin(x * 9 + TAU * ph) * Math.cos(y * 7 - TAU * ph);
+    h *= Math.max(0, 1 - Math.pow(Math.max(Math.abs(x), Math.abs(y)), 6));
+    F[j * n + i] = h;
   }
+  // Kamera: leicht schwenkend, schräg von oben, mit Perspektive
+  const yaw = 0.5 + 0.25 * Math.sin(TAU * ph), pitch = 1.0, zs = 0.55;
+  const proj = (x, y, z) => {
+    const X = x * Math.cos(yaw) - y * Math.sin(yaw), Y = x * Math.sin(yaw) + y * Math.cos(yaw);
+    const Yc = Y * Math.cos(pitch) - z * zs * Math.sin(pitch);
+    const f = 3.2 / (3.2 + Y * Math.sin(pitch) * 0.8);          // Perspektive: hinten kleiner
+    return [W / 2 + X * H * 0.62 * f, H * 0.56 + Yc * H * 0.62 * f];
+  };
+  const g = i => i / (n - 1) * 2 - 1;
+  const levels = 24, top = 1.15;
   const MS = [[], [[3, 0]], [[0, 1]], [[3, 1]], [[1, 2]], [[3, 0], [1, 2]], [[0, 2]], [[3, 2]], [[2, 3]], [[0, 2]], [[0, 1], [2, 3]], [[1, 2]], [[1, 3]], [[0, 1]], [[3, 0]], []];
-  c.lineJoin = 'round';
-  for (let L = 0; L < 11; L++) {
-    const iso = 0.06 + L * 0.09, major = L % 3 === 0;
-    c.strokeStyle = major ? P.accent : P.fg; c.globalAlpha = major ? 1 : 0.6; c.lineWidth = (major ? 2 : 1) * Math.max(1, H / 700);
+  c.lineJoin = 'round'; c.lineCap = 'round';
+  for (let L = 0; L < levels; L++) {
+    const iso = 0.03 + L * (top / levels), major = L % 5 === 0;
+    // 1) Fläche oberhalb der Höhenlinie in Hintergrundfarbe füllen: verdeckt die Linien dahinter
+    c.beginPath();
+    for (let j = 0; j < n - 1; j++) {
+      let run = -1;
+      for (let i = 0; i <= n - 1; i++) {
+        const full = i < n - 1 && F[j * n + i] > iso && F[j * n + i + 1] > iso && F[(j + 1) * n + i] > iso && F[(j + 1) * n + i + 1] > iso;
+        if (full && run < 0) run = i;
+        if (!full && run >= 0) {
+          const p = [proj(g(run), g(j), iso), proj(g(i), g(j), iso), proj(g(i), g(j + 1), iso), proj(g(run), g(j + 1), iso)];
+          c.moveTo(p[0][0], p[0][1]); p.slice(1).forEach(q => c.lineTo(q[0], q[1])); c.closePath(); run = -1;
+        }
+        if (!full && i < n - 1) {
+          const v = [F[j * n + i], F[j * n + i + 1], F[(j + 1) * n + i + 1], F[(j + 1) * n + i]];
+          if (v.some(a => a > iso)) {
+            const cn = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]], poly = [];
+            for (let k = 0; k < 4; k++) {
+              const a = v[k], b = v[(k + 1) % 4];
+              if (a > iso) poly.push(cn[k]);
+              if ((a > iso) !== (b > iso)) { const s = (iso - a) / (b - a); poly.push([cn[k][0] + (cn[(k + 1) % 4][0] - cn[k][0]) * s, cn[k][1] + (cn[(k + 1) % 4][1] - cn[k][1]) * s]); }
+            }
+            poly.forEach((q, k) => { const r = proj(g(q[0]), g(q[1]), iso); k ? c.lineTo(r[0], r[1]) : c.moveTo(r[0], r[1]); }); c.closePath();
+          }
+        }
+      }
+    }
+    c.fillStyle = P.bg; c.fill();
+    // 2) Höhenlinie zeichnen
     c.beginPath();
     for (let j = 0; j < n - 1; j++) for (let i = 0; i < n - 1; i++) {
       const a = F[j * n + i], b = F[j * n + i + 1], q = F[(j + 1) * n + i + 1], d = F[(j + 1) * n + i];
       const code = (a > iso) | (b > iso) << 1 | (q > iso) << 2 | (d > iso) << 3;
       if (code === 0 || code === 15) continue;
-      const x = ox + i * dd, y = oy + j * dd;
-      const e = [[x + dd * (iso - a) / (b - a), y], [x + dd, y + dd * (iso - b) / (q - b)], [x + dd * (iso - d) / (q - d), y + dd], [x, y + dd * (iso - a) / (d - a)]];
-      for (const [p, r] of MS[code]) { c.moveTo(e[p][0], e[p][1]); c.lineTo(e[r][0], e[r][1]); }
+      const e = [[i + (iso - a) / (b - a), j], [i + 1, j + (iso - b) / (q - b)], [i + (iso - d) / (q - d), j + 1], [i, j + (iso - a) / (d - a)]];
+      for (const [p, r] of MS[code]) { const A = proj(g(e[p][0]), g(e[p][1]), iso), Bq = proj(g(e[r][0]), g(e[r][1]), iso); c.moveTo(A[0], A[1]); c.lineTo(Bq[0], Bq[1]); }
     }
-    c.stroke();
+    c.strokeStyle = major ? P.accent : P.fg; c.globalAlpha = major ? 1 : 0.75;
+    c.lineWidth = Math.max(1, H / (major ? 380 : 620)); c.stroke(); c.globalAlpha = 1;
   }
-  c.globalAlpha = 1;
 }
 
 function pyramidSpin(c, t, W, H, P) {
@@ -2197,7 +2243,7 @@ const SHAPE_ROWS = [
   [dnaHelix, 'DNA Helix', 'organic', 'A', 'Eine Doppelhelix, die sich mit echter Tiefensortierung dreht.', 'A double helix turning with true depth sorting.'],
   [cellDivision, 'Cell Division', 'organic', 'A', 'Eine Zelle teilt sich in vier und findet wieder zusammen.', 'A cell dividing into four and coming back together.'],
   [chipPulse, 'Chip Pulse', 'tech', 'A', 'Ein Mikrochip schickt Signale über 24 Leiterbahnen nach außen.', 'A microchip sending signals out along 24 traces.'],
-  [contourIsland, 'Contour Island', 'topo', 'W', 'Höhenlinien einer Insel, deren Küste sich langsam verformt.', 'Contour lines of an island whose coastline slowly shifts.'],
+  [contourIsland, 'Contour Island 3D', 'topo', 'A', 'Höhenlinien einer Insel, räumlich gestapelt. Vier Gipfel wachsen und schrumpfen, die Kamera schwenkt mit, und verdeckte Linien verschwinden hinter den Bergen.', 'Contour lines of an island, stacked in 3D. Four peaks grow and shrink, the camera pans along, and hidden lines disappear behind the hills.'],
   [pyramidSpin, 'Pyramid Spin', 'pyramid', 'A', 'Eine massive Pyramide mit Flat-Shading, die über ihrem Schatten schwebt.', 'A solid flat-shaded pyramid floating above its shadow.'],
   [diamondGem, 'Diamond Gem', 'diamond', 'A', 'Ein facettierter Diamant mit 25 Flächen. Die hellste Facette blitzt in Orange auf.', 'A faceted diamond with 25 faces. The brightest facet flashes orange.', 1],
   [noiseCube, 'Noise Cube', 'cube', 'A', 'Ein Würfel aus 6 × 6 × 6 kleinen Würfeln. Ein Rauschfeld lässt sie schrumpfen, verschwinden und wieder auftauchen. Mit N = 12 sind es 1728 Würfel.', 'A cube made of 6 × 6 × 6 small cubes. A noise field makes them shrink, vanish and reappear. Set N = 12 for 1728 cubes.'],
@@ -2395,7 +2441,7 @@ const SECTIONS = [
   ['code', ['Code Rain', 'Code Scroll', 'Terminal Type']],
   ['tech', ['Circuit Board', 'Chip Pulse', 'Signal Bars', 'Radial EQ', 'Radar HUD', 'Gear Pair', 'Loader Arcs', 'Infinity Trail']],
   ['grid', ['Hex Pulse', 'Grid Warp', 'Vector Field', 'Dot Magnet', 'Pixel Wave', 'Synth Horizon']],
-  ['topo', ['Contour Drift', 'Ridge Lines', 'Topo Map', 'Terrain Mesh', 'Contour Island']],
+  ['topo', ['Contour Drift', 'Ridge Lines', 'Topo Map', 'Terrain Mesh', 'Contour Island 3D']],
   ['solid', ['Noise Cube', 'Metaballs 3D', 'Iso Cubes', 'Wire Cube', 'Globe Network', 'Pyramid Spin', 'Cube Procession', 'Diamond Gem', 'Menger Sponge']],
   ['square', ['Square Tunnel', 'Square Whirl', 'Op-Art Warp', 'Tangram', 'Slide Puzzle']],
   ['triangle', ['Low Poly Drift', 'Triangle Flip', 'Kaleidoscope', 'Chevron March', 'Hex Assemble']],
