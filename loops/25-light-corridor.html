@@ -25,50 +25,62 @@ function draw(c, t, W, H, P) {
   const A = hx(P.accent), F = hx(P.fg);
   const rgba = (X, a) => 'rgba(' + X.join(',') + ',' + a + ')';
   c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
-  // Ein Gang aus leuchtenden Rahmen. Pro Loop geht es genau K Rahmen nach vorn: nahtlos.
-  const K = 12, gap = 1.2, far = 30, travel = ph * K * gap;
-  const camX = 0.12 * Math.sin(TAU * ph), camY = -0.35 + 0.04 * Math.sin(TAU * ph * 2);
-  const fov = H * 0.55, hw = 1.5, hh = 1.1, fl = -1.0;
-  const proj = (x, y, z) => { const dz = z - travel; if (dz < 0.2) return null; return [W / 2 + (x - camX) / dz * fov, H * 0.46 - (y - camY) / dz * fov, dz]; };
-  const fade = dz => Math.max(0, Math.min(1, 1.1 - dz / far));
-  const glowLine = (pts, X, a, w) => {
-    const q = pts.map(p => proj(...p)); if (q.some(v => !v)) return;
-    const f = fade(Math.min(...q.map(v => v[2]))) * a; if (f <= 0.01) return;
-    c.beginPath(); q.forEach((v, i) => i ? c.lineTo(v[0], v[1]) : c.moveTo(v[0], v[1]));
-    c.strokeStyle = rgba(X, 0.12 * f); c.lineWidth = w * 6; c.stroke();     // Schein
-    c.strokeStyle = rgba(X, 0.3 * f); c.lineWidth = w * 2.4; c.stroke();
-    c.strokeStyle = rgba(X, f); c.lineWidth = w; c.stroke();                 // Kern
+  // Achterbahnfahrt durch einen gewundenen Lichtgang. Strecke, Kurven und Hindernisse wiederholen sich
+  // exakt nach D Einheiten, und genau D Einheiten werden pro Loop zurückgelegt: nahtlos.
+  const K = 60, gap = 0.55, D = K * gap, far = 22;
+  const travel = D * (ph + 0.6 * Math.sin(TAU * ph * 2) / (TAU * 2));          // schneller, langsamer, schneller
+  const path = z => { const u = TAU * z / D; return [1.3 * Math.sin(u) + 0.5 * Math.sin(3 * u + 1), 0.7 * Math.sin(2 * u + 0.5) + 0.25 * Math.cos(5 * u)]; };
+  const slope = z => { const a = path(z - 0.05), b = path(z + 0.05); return [(b[0] - a[0]) / 0.1, (b[1] - a[1]) / 0.1]; };
+  const OBJ = [];
+  for (let k = 0; k < 9; k++) { const z = (k + 0.5) * D / 9, side = k % 2 ? 1 : -1; OBJ.push([z, side * (0.45 + 0.25 * ((k * 7) % 3) / 2), (k % 3 - 1) * 0.35, k % 3 === 0]); }
+  // Ausweichen: vor jedem Hindernis schiebt sich die Kamera zur anderen Seite
+  let dodgeX = 0, dodgeY = 0;
+  OBJ.forEach(([oz, ox, oy]) => { for (const sh of [-D, 0, D]) { const d = oz + sh - travel - 1.2, w = Math.exp(-d * d / 1.6); dodgeX -= Math.sign(ox) * 0.75 * w; dodgeY -= oy * 0.6 * w; } });
+  const cp = path(travel), cs = slope(travel);
+  const camX = cp[0] + dodgeX, camY = cp[1] + dodgeY;
+  const roll = -0.35 * cs[0] - 0.4 * dodgeX * 0.5;                                // in die Kurve legen
+  const fov = H * 0.6;
+  const proj = (x, y, z) => {
+    const dz = z - travel; if (dz < 0.25) return null;
+    let X = x - camX - cs[0] * dz, Y = y - camY - cs[1] * dz;                     // Blick in Fahrtrichtung
+    const xr = X * Math.cos(roll) - Y * Math.sin(roll), yr = X * Math.sin(roll) + Y * Math.cos(roll);
+    return [W / 2 + xr / dz * fov, H / 2 - yr / dz * fov, dz];
   };
-  // Bodenspiegelung: dunkler Verlauf
-  const g = c.createRadialGradient(W / 2, H * 0.48, 0, W / 2, H * 0.48, H * 0.9); g.addColorStop(0, rgba(A, 0.12)); g.addColorStop(1, rgba(A, 0)); c.fillStyle = g; c.fillRect(0, 0, W, H);
-  c.globalCompositeOperation = 'lighter';
-  const lw = Math.max(1, H / 420);
+  const fade = dz => Math.max(0, Math.min(1, 1.1 - dz / far));
+  const glow = (pts, X, a, w) => {
+    const q = pts.map(p => proj(...p)); if (q.some(v => !v)) return;
+    const f = fade(Math.max(...q.map(v => v[2]))) * a; if (f <= 0.01) return;
+    c.beginPath(); q.forEach((v, i) => i ? c.lineTo(v[0], v[1]) : c.moveTo(v[0], v[1]));
+    c.strokeStyle = rgba(X, 0.1 * f); c.lineWidth = w * 6; c.stroke();
+    c.strokeStyle = rgba(X, 0.3 * f); c.lineWidth = w * 2.4; c.stroke();
+    c.strokeStyle = rgba(X, f); c.lineWidth = w; c.stroke();
+  };
+  const bg = c.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, H * 0.9); bg.addColorStop(0, rgba(A, 0.1)); bg.addColorStop(1, rgba(A, 0)); c.fillStyle = bg; c.fillRect(0, 0, W, H);
+  c.globalCompositeOperation = 'lighter'; c.lineJoin = 'round'; c.lineCap = 'round';
+  const lw = Math.max(1, H / 400), hw = 1.25, hh = 0.95;
+  const items = [];
   const z0 = Math.floor(travel / gap) * gap;
-  for (let z = z0 + far; z >= z0; z -= gap) {
-    const idx = ((Math.round(z / gap) % K) + K) % K;
-    // Rahmen
-    glowLine([[-hw, fl, z], [-hw, hh, z], [hw, hh, z], [hw, fl, z]], A, 1, lw);
-    // Spiegelung im Boden
-    glowLine([[-hw, fl, z], [-hw, 2 * fl - hh, z]], A, 0.25, lw); glowLine([[hw, fl, z], [hw, 2 * fl - hh, z]], A, 0.25, lw);
-    // Bodenlinie
-    glowLine([[-hw, fl, z], [hw, fl, z]], A, 0.55, lw * 0.8);
-    // gestrichelte Lichtleisten an Decke und Boden
-    if (idx % 2 === 0) { glowLine([[-0.05, hh, z], [-0.05, hh, z + gap * 0.5]], F, 0.7, lw); glowLine([[hw + 0.35, fl, z], [hw + 0.35, fl, z + gap * 0.55]], A, 0.9, lw * 1.4); }
-    // seitliche Glasflächen hin und wieder
-    if (idx % 4 === 1) glowLine([[-hw - 1.1, fl + 0.1, z], [-hw - 1.1, hh + 0.3, z], [-hw - 1.1, hh + 0.3, z + gap * 2.5], [-hw - 1.1, fl + 0.1, z + gap * 2.5], [-hw - 1.1, fl + 0.1, z]], A, 0.35, lw * 0.8);
-  }
-  // Bodenkanten und Lichtschiene rechts
-  glowLine([[-hw, fl, travel + 0.3], [-hw, fl, travel + far]], A, 0.5, lw); glowLine([[hw, fl, travel + 0.3], [hw, fl, travel + far]], A, 0.5, lw);
-  glowLine([[hw + 0.35, fl, travel + 0.3], [hw + 0.35, fl, travel + far]], A, 0.25, lw);
+  for (let z = z0 + far; z > z0; z -= gap) items.push([z, 'frame']);
+  OBJ.forEach(o => { for (const sh of [0, D]) { const z = o[0] + sh; if (z > travel + 0.3 && z < travel + far) items.push([z, 'obj', o]); } });
+  items.sort((a, b) => b[0] - a[0]);
+  items.forEach(([z, kind, o]) => {
+    const p = path(z);
+    if (kind === 'frame') {
+      const idx = ((Math.round(z / gap) % K) + K) % K, tw = 0.25 * Math.sin(TAU * z / D * 2);   // Rahmen verdreht sich mit der Strecke
+      const corner = (sx, sy) => [p[0] + (sx * hw) * Math.cos(tw) - (sy * hh) * Math.sin(tw), p[1] + (sx * hw) * Math.sin(tw) + (sy * hh) * Math.cos(tw), z];
+      glow([corner(-1, -1), corner(-1, 1), corner(1, 1), corner(1, -1), corner(-1, -1)], A, 1, lw);
+      if (idx % 4 === 0) glow([corner(-0.1, 1), corner(0.1, 1)], F, 0.9, lw * 1.2);
+      if (idx % 10 === 2) { const a = corner(-1, -1), b = corner(1, 1); glow([a, [ (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, z]], A, 0.4, lw * 0.7); }
+    } else {
+      const q = proj(p[0] + o[1], p[1] + o[2], z); if (!q) return;
+      const r = 0.22 / q[2] * fov, f = fade(q[2]), X = o[3] ? F : A;
+      const rg = c.createRadialGradient(q[0], q[1], 0, q[0], q[1], r * 2.6);
+      rg.addColorStop(0, rgba(X, 0.9 * f)); rg.addColorStop(0.35, rgba(X, 0.55 * f)); rg.addColorStop(1, rgba(X, 0));
+      c.fillStyle = rg; c.beginPath(); c.arc(q[0], q[1], r * 2.6, 0, TAU); c.fill();
+      c.fillStyle = rgba(F, f); c.beginPath(); c.arc(q[0], q[1], r * 0.45, 0, TAU); c.fill();
+    }
+  });
   c.globalCompositeOperation = 'source-over';
-  // Lichtpunkt am Ende des Gangs
-  const v = proj(0, (fl + hh) / 2 - 0.1, travel + far);
-  if (v) { const rg = c.createRadialGradient(v[0], v[1], 0, v[0], v[1], H * 0.08); rg.addColorStop(0, rgba(A, 0.8)); rg.addColorStop(1, rgba(A, 0)); c.fillStyle = rg; c.fillRect(v[0] - H * 0.1, v[1] - H * 0.1, H * 0.2, H * 0.2); }
-  // kleine Figur am Boden, die mitläuft
-  const fp = proj(-0.45 + camX * 0, fl, travel + 3.2) || [W * 0.4, H * 0.8], fx = fp[0], fy = fp[1], fh = H * 0.07;
-  c.fillStyle = rgba([10, 10, 12], 0.9); c.beginPath(); c.ellipse(fx, fy - fh * 0.88, fh * 0.11, fh * 0.12, 0, 0, TAU); c.fill();
-  c.beginPath(); c.moveTo(fx - fh * 0.15, fy - fh * 0.75); c.lineTo(fx + fh * 0.15, fy - fh * 0.75); c.lineTo(fx + fh * 0.1, fy); c.lineTo(fx - fh * 0.1, fy); c.closePath(); c.fill();
-  c.strokeStyle = rgba(A, 0.7); c.lineWidth = lw; c.beginPath(); c.moveTo(fx - fh * 0.5, fy + fh * 0.02); c.lineTo(fx + fh * 0.5, fy + fh * 0.02); c.lineTo(fx + fh * 0.7, fy + fh * 0.22); c.lineTo(fx - fh * 0.7, fy + fh * 0.22); c.closePath(); c.stroke();
 }
 
 const cv = document.getElementById('loop');

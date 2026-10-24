@@ -68,7 +68,7 @@ Buttons are pure CSS. Colors run through `--bg`, `--fg` and `--accent`; size sca
 | 22 | [Contour Drift](loops/22-contour-drift.html) | Canvas | Contour lines flowing slowly out of the center, breathing as they go. Calm enough for subtitles. |
 | 23 | [Ridge Lines](loops/23-ridge-lines.html) | Canvas | Stacked lines like a mountain profile. Three overlaid waves keep the motion calm. |
 | 24 | [Topo Map](loops/24-topo-map.html) | Canvas | Real contour lines via marching squares from a moving landscape. Every fifth line is emphasized, like on a map. |
-| 25 | [Light Corridor](loops/25-light-corridor.html) | Canvas | An endless corridor of glowing orange frames with floor reflections, light strips and glass walls. A small figure stands in the light. |
+| 25 | [Light Corridor](loops/25-light-corridor.html) | Canvas | A rollercoaster ride through a winding corridor of glowing frames. The speed changes, the camera banks into the curves and dodges oncoming orbs of light. |
 | 26 | [Contour Island 3D](loops/26-contour-island-3d.html) | Canvas | Contour lines of an island, stacked in 3D. Four peaks grow and shrink, the camera pans along, and hidden lines disappear behind the hills. |
 
 ### 3D solids (9)
